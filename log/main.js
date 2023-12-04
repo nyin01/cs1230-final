@@ -1,9 +1,11 @@
 import './style.css'
 import javascriptLogo from './javascript.svg'
 import viteLogo from '/vite.svg'
-// import { setupCounter } from './counter.js'
+import { setupCounter } from './counter.js'
 
 import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
 
 // Scene
 const scene = new THREE.Scene();
@@ -41,6 +43,54 @@ const cubeWireframeMaterial = new THREE.MeshBasicMaterial({
 const cubeWireframe1 = new THREE.Mesh(cubeGeometry, cubeWireframeMaterial);
 cubeWireframe1.position.set(-5, 10, 12); 
 scene.add(cubeWireframe1);
+// Add lighting
+const light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(1, 1, 1);
+scene.add(light);
+
+// Function to create a tree
+function createTree() {
+  // Create a cylinder to represent the trunk
+  const trunkGeometry = new THREE.CylinderGeometry(0.5, 0.5, 3, 32);
+  const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+  const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+  trunk.position.set(0, 0, 0);
+  scene.add(trunk);
+
+  // Create a cone to represent the foliage
+  const foliageGeometry = new THREE.ConeGeometry(2, 4, 32);
+  const foliageMaterial = new THREE.MeshLambertMaterial({ color: 0x00FF00 });
+  const foliage = new THREE.Mesh(foliageGeometry, foliageMaterial);
+  foliage.position.set(0, 3, 0);
+  scene.add(foliage);
+}
+
+createTree();
+
+camera.position.z = 10;
+
+// Create materials for the skybox
+const skyColor = new THREE.Color('lightblue');
+const groundColor = new THREE.Color('darkgreen');
+const skyboxMaterials = [
+    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Left side
+    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Right side
+    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Top side
+    new THREE.MeshBasicMaterial({ color: groundColor, side: THREE.BackSide }), // Bottom side
+    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Front side
+    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide })  // Back side
+];
+
+// Create the skybox
+const skyboxGeometry = new THREE.BoxGeometry(100, 100, 100);
+const skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterials);
+scene.add(skybox);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0, 0); // Set the point at which the camera looks
+controls.update(); // Update controls
+
+
 
 // Mesh, both object color and wireframe, added as a group 
 // this means the group has a different center pos? see the cube floating around
@@ -79,49 +129,10 @@ function animate() {
   cubeWireframe3.rotation.x += 0.01;
   cubeWireframe3.rotation.z += 0.01;
 
+  controls.update();
 	renderer.render( scene, camera );
 }
 animate();
-
-// Each time button clicked, increase height of tree (this is not the built in setupCounter function)
-function setupCounter(container) {
-  // Create a tree object with trunk and branches
-  const trunkGeometry = new THREE.CylinderGeometry(0.1, 0.2, 1, 8); // Trunk geometry
-  const trunkMaterial = new THREE.MeshBasicMaterial({ color: 0x8b4513 }); // Brown color for trunk
-  const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-  const branchGeometry = new THREE.ConeGeometry(0.5, 2, 8); // Branch geometry
-  const branchMaterial = new THREE.MeshBasicMaterial({ color: 0x228b22 }); // Green color for branches
-  const branches = new THREE.Group();
-  // Position and add trunk to branches group
-  trunk.position.set(0, -1.5, 0);
-  // branches.add(trunk);
-  // Add branches to the branches group
-  for (let i = 0; i < 3; i++) {
-    const branch = new THREE.Mesh(branchGeometry, branchMaterial);
-    branch.position.set(0, i * 1.5, 0);
-    branches.add(branch);
-  }
-  // Position the branches group in the scene
-  branches.position.set(0, 0, 0);
-  // Add the branches group to the scene
-  scene.add(trunk);
-  scene.add(branches);
-  // Append the counter button to the provided container
-  const counterButton = document.createElement('button');
-  counterButton.textContent = 'make it grow';
-  container.appendChild(counterButton);
-  // Handle button click to grow the tree
-  counterButton.addEventListener('click', () => {
-    // Add one branch to the branches group
-    const branch = new THREE.Mesh(branchGeometry, branchMaterial);
-    branch.position.set(0, branches.children.length * 1.5, 0);
-    branches.add(branch);
-    // Decrease the scale of the branches group
-    branches.scale.y -= 0.025;
-    // Move the branches group down
-    branches.position.y -= 0.025;
-  });
-}
 
 
 //   <div>
