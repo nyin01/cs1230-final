@@ -1,7 +1,7 @@
 import './style.css'
 import javascriptLogo from './javascript.svg'
 import viteLogo from '/vite.svg'
-import { setupCounter } from './counter.js'
+// import { setupCounter } from './counter.js'
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -19,7 +19,7 @@ const scene = new THREE.Scene();
  *  4) Far: if objects are farther than 'far', won't be rendered
  */
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 10, 20);
+camera.position.set(0, 20, 25);
 
 // Renderer
 const renderer = new THREE.WebGLRenderer();
@@ -67,7 +67,25 @@ function createTree() {
 
 createTree();
 
-camera.position.z = 10;
+let foliagePosY = 3;
+
+// Grow tree when clicked
+function setupCounter(container) {
+  const foliageGeometry = new THREE.ConeGeometry(2, 4, 32);
+  const foliageMaterial = new THREE.MeshLambertMaterial({ color: 0x00FF00 });
+  // Append the counter button to the provided container
+  const counterButton = document.createElement('button');
+  counterButton.textContent = 'Grow';
+  container.appendChild(counterButton);
+  // Handle button click to grow the tree
+  counterButton.addEventListener('click', () => {
+    foliagePosY += 2;
+    const moreFoliage = new THREE.Mesh(foliageGeometry, foliageMaterial);
+    moreFoliage.position.set(0, foliagePosY, 0);
+    scene.add(moreFoliage);
+  });
+}
+
 
 // Create materials for the skybox
 const skyColor = new THREE.Color('lightblue');
@@ -89,7 +107,6 @@ scene.add(skybox);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0, 0, 0); // Set the point at which the camera looks
 controls.update(); // Update controls
-
 
 
 // Mesh, both object color and wireframe, added as a group 
