@@ -1,9 +1,8 @@
 import './style.css'
-import javascriptLogo from './javascript.svg'
-import viteLogo from '/vite.svg'
-import { setupCounter } from './counter.js'
 
 import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
 
 const scene = new THREE.Scene();
 
@@ -17,23 +16,63 @@ const scene = new THREE.Scene();
  */
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 
-
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth * 0.9, window.innerHeight * 0.9 );
 document.body.appendChild( renderer.domElement );
 
-const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-const cube = new THREE.Mesh( geometry, material );
-scene.add( cube );
+// Add lighting
+const light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(1, 1, 1);
+scene.add(light);
 
-camera.position.z = 5;
+// Function to create a tree
+function createTree() {
+  // Create a cylinder to represent the trunk
+  const trunkGeometry = new THREE.CylinderGeometry(0.5, 0.5, 3, 32);
+  const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+  const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+  trunk.position.set(0, 0, 0);
+  scene.add(trunk);
+
+  // Create a cone to represent the foliage
+  const foliageGeometry = new THREE.ConeGeometry(2, 4, 32);
+  const foliageMaterial = new THREE.MeshLambertMaterial({ color: 0x00FF00 });
+  const foliage = new THREE.Mesh(foliageGeometry, foliageMaterial);
+  foliage.position.set(0, 3, 0);
+  scene.add(foliage);
+}
+
+createTree();
+
+camera.position.z = 10;
+
+// Create materials for the skybox
+const skyColor = new THREE.Color('lightblue');
+const groundColor = new THREE.Color('darkgreen');
+const skyboxMaterials = [
+    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Left side
+    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Right side
+    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Top side
+    new THREE.MeshBasicMaterial({ color: groundColor, side: THREE.BackSide }), // Bottom side
+    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Front side
+    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide })  // Back side
+];
+
+// Create the skybox
+const skyboxGeometry = new THREE.BoxGeometry(100, 100, 100);
+const skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterials);
+scene.add(skybox);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0, 0); // Set the point at which the camera looks
+controls.update(); // Update controls
+
+
 
 function animate() {
 	requestAnimationFrame( animate );
 
-  cube.rotation.x += 0.01;
-  cube.rotation.y += 0.01;
+  controls.update();
 
 	renderer.render( scene, camera );
 }
