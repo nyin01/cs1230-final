@@ -65,7 +65,28 @@ function createTree() {
   scene.add(foliage);
 }
 
-createTree();
+// Function to create a floating island
+function createFloatingIsland() {
+  // Create island base
+  // const islandGeometry = new THREE.SphereGeometry(2, 5, 5);
+  // const islandMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+  // const island = new THREE.Mesh(islandGeometry, islandMaterial);
+  // island.position.set(0, -3, 0);
+  // scene.add(island);
+
+  // Add rocks and shrubs
+  // ... [Add simple geometries to represent rocks and shrubs]
+
+  // Add the tree to the island
+  createTree();
+
+  // Add a waterfall
+  // ... [Create waterfall using PlaneGeometry and animate it]
+}
+
+// Create the floating island
+createFloatingIsland();
+
 
 let foliagePosY = 3;
 
