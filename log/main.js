@@ -6,9 +6,13 @@ import viteLogo from "/vite.svg";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
+let camera;
+let renderer;
+let scene;
+
 function init() {
   // Scene
-  const scene = new THREE.Scene();
+  scene = new THREE.Scene();
   scene.background = new THREE.Color(0x000000);
 
   setupCamera();
@@ -17,6 +21,8 @@ function init() {
   setupSkyBox();
   setupControl();
   setupGeometry();
+
+  renderer.render(scene, camera);
 }
 
 function setupCamera() {
@@ -28,7 +34,7 @@ function setupCamera() {
    *  3) Near: if objects are closer than 'near', won't be rendered
    *  4) Far: if objects are farther than 'far', won't be rendered
    */
-  const camera = new THREE.PerspectiveCamera(
+  camera = new THREE.PerspectiveCamera(
     75,
     window.innerWidth / window.innerHeight,
     0.1,
@@ -46,7 +52,7 @@ function setupLights() {
 
 function setupRenderer() {
   // Renderer
-  const renderer = new THREE.WebGLRenderer();
+  renderer = new THREE.WebGLRenderer();
   renderer.setSize(window.innerWidth * 0.9, window.innerHeight * 0.9);
   document.body.appendChild(renderer.domElement);
 }
