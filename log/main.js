@@ -1,6 +1,4 @@
 import "./style.css";
-import javascriptLogo from "./javascript.svg";
-import viteLogo from "/vite.svg";
 // import { setupCounter } from './counter.js'
 
 import * as THREE from "three";
@@ -9,11 +7,16 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 let camera;
 let renderer;
 let scene;
+let light;
+let skybox;
+let controls;
+let cube2;
+let cube3;
 
 function init() {
   // Scene
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x000000);
+  scene.background = new THREE.Color("lightblue");
 
   setupCamera();
   setupLights();
@@ -21,8 +24,6 @@ function init() {
   setupSkyBox();
   setupControl();
   setupGeometry();
-
-  renderer.render(scene, camera);
 }
 
 function setupCamera() {
@@ -45,7 +46,7 @@ function setupCamera() {
 
 function setupLights() {
   // Add lighting
-  const light = new THREE.DirectionalLight(0xffffff, 1);
+  light = new THREE.DirectionalLight(0xffffff, 1);
   light.position.set(1, 1, 1);
   scene.add(light);
 }
@@ -72,32 +73,42 @@ function setupSkyBox() {
 
   // Create the skybox
   const skyboxGeometry = new THREE.BoxGeometry(100, 100, 100);
-  const skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterials);
+  skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterials);
   scene.add(skybox);
 }
 
 function setupControl() {
-  const controls = new OrbitControls(camera, renderer.domElement);
+  controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(0, 0, 0); // Set the point at which the camera looks
-  controls.update(); // Update controls
+  controls.update();
 }
 
 function setupGeometry() {
-  const cube2 = new THREE.Mesh(cubeGeometry, cubeMaterial);
-  const cubeWireframe2 = new THREE.Mesh(cubeGeometry, cubeWireframeMaterial);
+  const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
+  const cubeMaterial = new THREE.MeshBasicMaterial({
+    color: 0x489e94,
+  });
+  cube2 = new THREE.Mesh(cubeGeometry, cubeMaterial);
   cube2.position.set(-5, 13, 12);
-  cubeWireframe2.position.set(-5, 13, 12);
-  const cubeGroup = new THREE.Group();
-  cubeGroup.add(cube2);
-  cubeGroup.add(cubeWireframe2);
-  scene.add(cubeGroup);
+  scene.add(cube2);
   // another one, added as separate meshes
-  const cube3 = new THREE.Mesh(cubeGeometry, cubeMaterial);
-  const cubeWireframe3 = new THREE.Mesh(cubeGeometry, cubeWireframeMaterial);
-  cube3.position.set(-5, 13, 12);
-  cubeWireframe3.position.set(-5, 13, 12);
+  cube3 = new THREE.Mesh(cubeGeometry, cubeMaterial);
+  cube3.position.set(30, 13, 12);
   scene.add(cube3);
-  scene.add(cubeWireframe3);
+}
+
+// Animation Loop
+function animate() {
+  requestAnimationFrame(animate);
+
+  cube2.rotation.x += 0.01;
+  cube2.rotation.y += 0.01;
+
+  cube3.rotation.x += 0.01;
+  cube3.rotation.z += 0.01;
+
+  renderer.render(scene, camera);
 }
 
 init();
+animate();
