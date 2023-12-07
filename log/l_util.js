@@ -1,9 +1,12 @@
 let rules = [];
-let axiom = "X";
 
+// rules[0] = {
+//   a: "F",
+//   b: "F[+F]F[-F]F",
+// };
 rules[0] = {
   a: "X",
-  b: "F+[[X]-X]-[F[-FX]+X",
+  b: "F+[[X]-X]-F[-FX]+X",
 };
 rules[1] = {
   a: "F",
@@ -17,22 +20,24 @@ rules[1] = {
  * @param {*} curr current iteration number
  * @returns
  */
-function generate(text, iteration, curr) {
+export function generate(text, iteration, curr) {
   if (curr == iteration) {
     return text;
   }
   var new_sentence = "";
-  var found = false;
+
   for (var i = 0; i < text.length; i++) {
-    var current_char = text.charAt(i);
+    const current_char = text.charAt(i);
+    let found = false;
+
     for (var j = 0; j < rules.length; j++) {
       if (current_char == rules[j].a) {
         new_sentence += rules[j].b;
         found = true;
-        break;
       }
     }
-    if (!found) {
+    if (found == false) {
+      console.log(current_char);
       new_sentence += current_char;
     }
   }
