@@ -4,14 +4,27 @@ let rules = [];
 //   a: "F",
 //   b: "F[+F]F[-F]F",
 // };
+// rules[0] = {
+//   a: "X",
+//   b: "F+[[X]-X]-F[-FX]+X",
+// };
 rules[0] = {
   a: "X",
-  b: "F+[[X]-X]-F[-FX]+X",
+  b: "F+<[[X]->X]->F[-<FX]+X",
 };
 rules[1] = {
   a: "F",
   b: "FF",
 };
+
+// rules[0] = {
+//   a: "A",
+//   b: "^FB>>>B>>>>>B",
+// };
+// rules[1] = {
+//   a: "B",
+//   b: "[^^F>>>>>>A]",
+// };
 
 /**
  * Recursive function to generate lindenmayer string for tree generation
@@ -37,7 +50,6 @@ export function generate(text, iteration, curr) {
       }
     }
     if (found == false) {
-      console.log(current_char);
       new_sentence += current_char;
     }
   }
