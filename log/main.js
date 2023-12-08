@@ -27,6 +27,7 @@ function init() {
   setupControl();
   // setupGeometry();
   buildTree(5);
+  setupSider();
 }
 
 function setupCamera() {
@@ -193,10 +194,13 @@ function buildTree(iteration) {
     }
   }
 
-  total_tree_geo = BufferGeometryUtils.mergeGeometries(trunks);
-  const trunk_mat = new THREE.MeshLambertMaterial({ color: 12887172 });
-  var tree_mesh = new THREE.Mesh(total_tree_geo, trunk_mat);
-  scene.add(tree_mesh);
+  if (trunks.length > 0) {
+    total_tree_geo = BufferGeometryUtils.mergeGeometries(trunks);
+    const trunk_mat = new THREE.MeshLambertMaterial({ color: 12887172 });
+    var tree_mesh = new THREE.Mesh(total_tree_geo, trunk_mat);
+    tree_mesh.name = "tree_mesh";
+    scene.add(tree_mesh);
+  }
 }
 
 function makeBranch(start, end, s_radius, e_radius, quaternion) {
@@ -215,6 +219,24 @@ function makeBranch(start, end, s_radius, e_radius, quaternion) {
 function animate() {
   requestAnimationFrame(animate);
   renderer.render(scene, camera);
+}
+
+document.querySelector("#app").innerHTML = `
+  <div>
+    <div class="card">
+      <input type="range" min="0" max="5" value="0" class="slider" id="mySlider">
+
+    </div>
+  </div>
+`;
+
+function setupSider() {
+  const slider = document.getElementById("mySlider");
+  slider.addEventListener("input", () => {
+    var tree_mesh = scene.getObjectByName("tree_mesh");
+    scene.remove(tree_mesh);
+    buildTree(slider.value);
+  });
 }
 
 init();
