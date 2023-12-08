@@ -107,7 +107,7 @@ function buildTree(iteration) {
   var quaternion = new THREE.Quaternion();
   let start_point = new THREE.Vector3(0, -50, 0);
   let trunks = [];
-  let radius_start = 5;
+  let radius_start = 10;
   let thin_factor = 0.95;
   const angle = Math.PI / 7;
   const stack = [];
