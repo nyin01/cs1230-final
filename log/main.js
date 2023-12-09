@@ -54,7 +54,7 @@ function setupCamera() {
     0.1,
     1000
   );
-  camera.position.set(0, 20, 25);
+  camera.position.set(0, 20, 250);
 }
 
 function setupRenderer() {
@@ -226,10 +226,10 @@ function makeLeaf(center) {
 function createDias() {
   // const building = createDias(0xfedcc1, 0x5e6679, 2, 3, 2, 0.8);
   
-  var bigCubeGeometry = new THREE.BoxGeometry(4, 2.5, 4);
-  const bigGrassGeometry = new THREE.PlaneGeometry(4, 4);
-  var smallCubeGeometry = new THREE.BoxGeometry(3, 0.7, 3);
-  const smallGrassGeometry = new THREE.PlaneGeometry(3, 3);
+  var bigCubeGeometry = new THREE.BoxGeometry(50, 15, 50);
+  const bigGrassGeometry = new THREE.PlaneGeometry(50, 50);
+  var smallCubeGeometry = new THREE.BoxGeometry(30, 7, 30);
+  const smallGrassGeometry = new THREE.PlaneGeometry(30, 30);
 
   
   // var cubeMaterial = new THREE.MeshPhongMaterial({ color: 0xfedcc1 });
@@ -270,31 +270,21 @@ function createDias() {
     uniforms: {
         color1: { value: new THREE.Color(0xfedcc1) }, //light peach
         color2: { value: new THREE.Color(0xecbea0) },  // tan
-        lightDirection: { value: new THREE.Vector3(-5, 5, 5).normalize() }
+        lightDirection: { value: new THREE.Vector3(-5, 5, 5).normalize() },
     }
 });
   
   const dias = new THREE.Mesh(bigCubeGeometry, material);
-  dias.position.set(0, 1.5, -2);
+  dias.position.set(0, -47.5, 0);
   scene.add(dias);
 
-  const diasTop = new THREE.Mesh(smallCubeGeometry, material);
-  diasTop.position.set(0, 3, -2);
-  scene.add(diasTop);
-
   const grassMaterial = new THREE.MeshToonMaterial({color: 0xe6eab5 });
-
-  const smallgrass = new THREE.Mesh(smallGrassGeometry, grassMaterial);
-  smallgrass.rotateX(-Math.PI * 0.5);
 
   const biggrass = new THREE.Mesh(bigGrassGeometry, grassMaterial);
   biggrass.rotateX(-Math.PI * 0.5);
   
-  smallgrass.position.set(0, 3.36 ,-2);
+  biggrass.position.set(0, -39.9 , 0);
 
-  biggrass.position.set(0, 2.76 , -2);
-
-  scene.add(smallgrass);
   scene.add(biggrass);
 
 }
@@ -302,8 +292,8 @@ function createDias() {
 function createWaterfall() {
 
   // Define a waterfall, assuming it's a thin, vertical box
-  const waterfallVerticalGeometry = new THREE.PlaneGeometry(2, 10);
-  const waterfallHorizontalGeometry = new THREE.PlaneGeometry(2, 5);
+  const waterfallVerticalGeometry = new THREE.PlaneGeometry(20, 100);
+  const waterfallHorizontalGeometry = new THREE.PlaneGeometry(20, 50);
 
   const waterfallMaterial = new THREE.MeshToonMaterial({ color: 0x71cbaa, side: THREE.DoubleSide });
 
@@ -323,6 +313,7 @@ function createWaterfall() {
         varying vec3 vPosition;
         uniform vec3 color1;
         uniform vec3 color2;
+
         uniform vec3 lightDirection;
         void main() {
           // Calculate lighting
@@ -332,7 +323,7 @@ function createWaterfall() {
           float quantizedIntensity = floor(lightIntensity * 6.0) / 3.0;
 
           // Gradient mix
-          float mixRatio = clamp((vPosition.y + 3.0), 0.0, 1.0);
+          float mixRatio = clamp((vPosition.y + 10.0), 0.0, 1.0);
           vec3 gradient = mix(color2, color1, mixRatio);
 
           // Apply quantized lighting
@@ -344,16 +335,17 @@ function createWaterfall() {
     uniforms: {
         color1: { value: new THREE.Color(0x71cbaa) }, //light peach
         color2: { value: new THREE.Color(0x46a493) },  // tan
-        lightDirection: { value: new THREE.Vector3(-5, 5, 10).normalize() }
-    }
+        lightDirection: { value: new THREE.Vector3(-5, 5, 10).normalize() },
+    },
+    side: THREE.DoubleSide // Render both sides
   });
 
   const waterfallVertical = new THREE.Mesh(waterfallVerticalGeometry, material);
   const waterfallHortizontal = new THREE.Mesh(waterfallHorizontalGeometry, waterfallMaterial);
   waterfallHortizontal.rotateX(-Math.PI * 0.5);
 
-  waterfallVertical.position.set(1, -4.48, 5.01);
-  waterfallHortizontal.position.set(1, 0.52, 2.51);
+  waterfallVertical.position.set(10, -104.7, 75.1);
+  waterfallHortizontal.position.set(10, -54.81, 50);
 
   scene.add(waterfallVertical);
   scene.add(waterfallHortizontal);
@@ -364,15 +356,15 @@ function createWaterfall() {
 function createFloatingIsland() {
   // Create geometries for the island
   // Define the main island platform
-  const islandGeometry = new THREE.BoxGeometry(10, 1, 10);
+  const islandGeometry = new THREE.BoxGeometry(200, 10, 150);
 
-  const grassGeometry = new THREE.PlaneGeometry(10, 10);
+  const grassGeometry = new THREE.PlaneGeometry(200, 150);
 
   // // Define a tower, assuming it's a cylinder
-  const towerGeometry = new THREE.CylinderGeometry(0.75, 0.75, 5, 32);
+  const towerGeometry = new THREE.CylinderGeometry(7.5, 7.5, 50, 32);
 
   // // For the domed roofs, we could use a half-sphere geometry
-  const domeGeometry = new THREE.SphereGeometry(1, 32, 32, 0, Math.PI * 2, 0, Math.PI / 2);
+  const domeGeometry = new THREE.SphereGeometry(10, 32, 32, 0, Math.PI * 2, 0, Math.PI / 2);
 
 
   // Create materials for the island
@@ -392,8 +384,8 @@ function createFloatingIsland() {
   const tower = new THREE.Mesh(towerGeometry, towerMaterial);
   const dome = new THREE.Mesh(domeGeometry, domeMaterial);
 
-  island.position.set(0, 0, 0);
-  grass.position.set(0, 0.51 ,0);
+  island.position.set(0, -60, 0);
+  grass.position.set(0, -54.91 ,0);
   
   tower.position.set(3, 4, 3);
   dome.position.set(-2, 3, -2);
@@ -404,12 +396,8 @@ function createFloatingIsland() {
   scene.add(grass);
   createWaterfall();
   createDias();
-  scene.add(tower);
-  scene.add(dome);
-
-  // Add the tree to the island
-  // buildTree();
-
+  // scene.add(tower);
+  // scene.add(dome);
 }
 
 const addCliff = (width, height, depth, x, y, z) => {
@@ -444,7 +432,7 @@ function setupSkyBox() {
   ];
 
   // Create the skybox
-  const skyboxGeometry = new THREE.BoxGeometry(100, 100, 100);
+  const skyboxGeometry = new THREE.BoxGeometry(300, 300, 300);
   skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterials);
   scene.add(skybox);
 }
