@@ -14,9 +14,12 @@ let skybox;
 let controls;
 let axiom = "X";
 let total_tree_geo = new THREE.BufferGeometry();
+let total_leaf_geo = new THREE.BufferGeometry();
+let container;
 
 function init() {
   // Scene
+  container = document.querySelector("#app");
   scene = new THREE.Scene();
   scene.background = new THREE.Color("lightblue");
 
@@ -101,34 +104,40 @@ function setupControl() {
 //   scene.add(cube3);
 // }
 
-function buildTree(iteration) {
+function buildTree(iteration, radius, decay, length) {
   // iteration = iteration < 2 ? 2 : iteration;
   let l_str = generate(axiom, iteration, 0);
   total_tree_geo = new THREE.BufferGeometry();
+  total_leaf_geo = new THREE.BufferGeometry();
   var quaternion = new THREE.Quaternion();
   let start_point = new THREE.Vector3(0, -50, 0);
   let trunks = [];
-  let radius_start = 10;
-  let thin_factor = 0.95;
+  let leaves = [];
+  let radius_start = radius;
+  let thin_factor = decay;
+  let branch_length = length;
   const angle = Math.PI / 7;
   const stack = [];
   for (var i = 0; i < l_str.length; i++) {
     var char = l_str[i];
     if (char == "F") {
       //determine endpoint with quaternion rotation
-      const dir = new THREE.Vector3(0, 5, 0);
+      const dir = new THREE.Vector3(0, branch_length, 0);
       dir.applyQuaternion(quaternion);
       const end_point = start_point.clone();
       end_point.add(dir);
 
       //determine start radius and end radius of the branch
       const radius_end = radius_start * thin_factor;
+
+      //create branch and leaf geometry
       const curr_branch = makeBranch(
         start_point.clone(),
         end_point.clone(),
         radius_start,
         radius_end,
-        quaternion.clone()
+        quaternion.clone(),
+        branch_length
       );
 
       //push to render group
@@ -169,6 +178,8 @@ function buildTree(iteration) {
       new_obj.radius = radius_start;
       stack.push(new_obj);
     } else if (char == "]") {
+      const curr_leaf = makeLeaf(start_point.clone());
+      leaves.push(curr_leaf.clone());
       const tuple = stack.pop();
       if (tuple) {
         quaternion.copy(tuple.qua);
@@ -201,10 +212,24 @@ function buildTree(iteration) {
     tree_mesh.name = "tree_mesh";
     scene.add(tree_mesh);
   }
+
+  if (leaves.length > 0) {
+    total_leaf_geo = BufferGeometryUtils.mergeGeometries(leaves);
+    const leaf_mat = new THREE.MeshLambertMaterial({ color: "green" });
+    var leaf_mesh = new THREE.Mesh(total_leaf_geo, leaf_mat);
+    leaf_mesh.name = "leaf_mesh";
+    scene.add(leaf_mesh);
+  }
 }
 
-function makeBranch(start, end, s_radius, e_radius, quaternion) {
-  const trunk_geo = new THREE.CylinderGeometry(e_radius, s_radius, 5, 3, 1);
+function makeBranch(start, end, s_radius, e_radius, quaternion, length) {
+  const trunk_geo = new THREE.CylinderGeometry(
+    e_radius,
+    s_radius,
+    length,
+    3,
+    1
+  );
   trunk_geo.applyQuaternion(quaternion);
 
   const pos = new THREE.Vector3(
@@ -215,6 +240,14 @@ function makeBranch(start, end, s_radius, e_radius, quaternion) {
   trunk_geo.translate(pos);
   return trunk_geo;
 }
+
+function makeLeaf(center) {
+  const leaf_geo = new THREE.SphereGeometry(20, 2, 2);
+
+  const pos = new THREE.Vector3(center.x, center.y, center.z);
+  leaf_geo.translate(pos);
+  return leaf_geo;
+}
 // Animation Loop
 function animate() {
   requestAnimationFrame(animate);
@@ -224,7 +257,7 @@ function animate() {
 document.querySelector("#app").innerHTML = `
   <div>
     <div class="card">
-      <input type="range" min="0" max="5" value="0" class="slider" id="mySlider">
+      <input type="range" min="0" max="100" value="0" class="slider" id="mySlider">
 
     </div>
   </div>
@@ -233,11 +266,33 @@ document.querySelector("#app").innerHTML = `
 function setupSider() {
   const slider = document.getElementById("mySlider");
   slider.addEventListener("input", () => {
+    //delete existing tree mesh
     var tree_mesh = scene.getObjectByName("tree_mesh");
     scene.remove(tree_mesh);
-    buildTree(slider.value);
+
+    var leaf_mesh = scene.getObjectByName("leaf_mesh");
+    scene.remove(leaf_mesh);
+
+    //configure new tree mesh iteration, radius, and decay factor
+    const value = slider.value;
+    const radius = 3 + (5 * value) / 100;
+    const decay_factor = Math.min(0.95, 1 - 0.05 / (value / 50));
+    const iter = Math.ceil(value / 20);
+    const length = (10 * value) / 100;
+
+    buildTree(iter, radius, decay_factor, length);
   });
 }
+
+function onWindowResize() {
+  camera.aspect = container.clientWidth / container.clientHeight;
+
+  camera.updateProjectionMatrix();
+
+  renderer.setSize(container.clientWidth, container.clientHeight);
+}
+
+window.addEventListener("resize", onWindowResize);
 
 init();
 animate();
