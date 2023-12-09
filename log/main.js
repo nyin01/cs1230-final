@@ -7,6 +7,9 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 
+// weather utils
+import { generateRain, generateSnow, generateWind } from './weather.js';
+
 // Scene
 const scene = new THREE.Scene();
 
@@ -128,6 +131,15 @@ cubeWireframe3.position.set(-5, 13, 12);
 scene.add(cube3);
 scene.add(cubeWireframe3);
 
+
+// weather
+const rain = generateRain();
+const snow = generateSnow();
+const wind = generateWind();
+scene.add(rain);
+scene.add(snow);
+scene.add(wind);
+
 // Animation Loop
 function animate() {
   requestAnimationFrame(animate);
@@ -145,6 +157,15 @@ function animate() {
   cube3.rotation.z += 0.01;
   cubeWireframe3.rotation.x += 0.01;
   cubeWireframe3.rotation.z += 0.01;
+
+  // animate rain and snow to fall down vertically
+  rain.rotation.y += 0.01;
+  rain.position.y -= 0.1;
+  snow.rotation.y += 0.01;
+  snow.position.y -= 0.1;
+
+  // animate wind 
+  wind.position.x += 2;
 
   controls.update();
 	renderer.render( scene, camera );
