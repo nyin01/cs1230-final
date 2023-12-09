@@ -1,76 +1,226 @@
 import './style.css'
-import javascriptLogo from './javascript.svg'
-import viteLogo from '/vite.svg'
-// import { setupCounter } from './counter.js'
 
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { generate } from './l_util';
 
+let camera;
+let renderer;
+let scene;
+let light;
+let skybox;
+let controls;
+let axiom = "X";
+let total_tree_geo = new THREE.BufferGeometry();
+let total_leaf_geo = new THREE.BufferGeometry();
+let container;
 
-// Scene
-const scene = new THREE.Scene();
+function init() {
+  // Scene
+  container = document.querySelector("#app");
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color("lightblue");
 
-/**
- * PERSPECTIVE CAMERA
- * 
- *  1) Field of View is the extent of the scene that is seen on the display at any given moment. The value is in degrees.
- *  2) Aspect Ratio: use the width of the element divided by the height, or you'll get squished image
- *  3) Near: if objects are closer than 'near', won't be rendered
- *  4) Far: if objects are farther than 'far', won't be rendered
- */
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 10, 25);
+  setupCamera();
+  setupLights();
+  setupRenderer();
+  setupSkyBox();
+  setupControl();
+  // setupGeometry();
+  addCliff(2, 1.5, 10, 4, -1.25, 0); // big cliff
+  addCliff(2, 4, 10, 2, -2.5, 0); // big cliff
 
-// Renderer
-const renderer = new THREE.WebGLRenderer({
-  antialias: true
-});
-renderer.setSize( window.innerWidth * 0.9, window.innerHeight * 0.9 );
-document.body.appendChild(renderer.domElement);
+  addConeCliff(1.3, 4, 3.7, -4, 3.8, 1);     // Triangular cliff
 
-// Mesh, object only
-const cubeGeometry = new THREE.BoxGeometry( 1, 1, 1 );
-const cubeMaterial = new THREE.MeshBasicMaterial({
-  color: 0x489e94,
-});
-const cube1 = new THREE.Mesh(cubeGeometry, cubeMaterial);
-cube1.position.set(-5, 7, 12); // or set individual x, y, z like cube.position.x = 5;
-scene.add(cube1);
-
-// Mesh, wireframe only
-const cubeWireframeMaterial = new THREE.MeshBasicMaterial({
-  color: 0xffffff,
-  wireframe: true,
-});
-const cubeWireframe1 = new THREE.Mesh(cubeGeometry, cubeWireframeMaterial);
-cubeWireframe1.position.set(-5, 10, 12); 
-scene.add(cubeWireframe1);
-
-// Add lighting
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-directionalLight.position.set(-5, 5, 5);
-ambientLight.position.set(1, 1, 1);
-scene.add(directionalLight);
-scene.add(ambientLight);
-
-
-// Function to create a tree
-function createTree() {
-  // Create a cylinder to represent the trunk
-  const trunkGeometry = new THREE.CylinderGeometry(0.5, 0.5, 3, 32);
-  const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
-  const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-  trunk.position.set(0, 0, 0);
-  scene.add(trunk);
-
-  // Create a cone to represent the foliage
-  const foliageGeometry = new THREE.ConeGeometry(2, 4, 32);
-  const foliageMaterial = new THREE.MeshLambertMaterial({ color: 0x00FF00 });
-  const foliage = new THREE.Mesh(foliageGeometry, foliageMaterial);
-  foliage.position.set(0, 3, 0);
-  scene.add(foliage);
+  // Create the floating island
+  createFloatingIsland();
+  buildTree(5);
+  setupSider();
 }
+
+function setupCamera() {
+  /**
+   * PERSPECTIVE CAMERA
+   *
+   *  1) Field of View is the extent of the scene that is seen on the display at any given moment. The value is in degrees.
+   *  2) Aspect Ratio: use the width of the element divided by the height, or you'll get squished image
+   *  3) Near: if objects are closer than 'near', won't be rendered
+   *  4) Far: if objects are farther than 'far', won't be rendered
+   */
+  camera = new THREE.PerspectiveCamera(
+    75,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000
+  );
+  camera.position.set(0, 20, 25);
+}
+
+function setupRenderer() {
+  // Renderer
+  renderer = new THREE.WebGLRenderer();
+  renderer.setSize(window.innerWidth * 0.9, window.innerHeight * 0.9);
+  document.body.appendChild(renderer.domElement);
+}
+
+
+function setupLights() {
+  // Add lighting
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+  directionalLight.position.set(-5, 5, 5);
+  ambientLight.position.set(1, 1, 1);
+  scene.add(directionalLight);
+  scene.add(ambientLight);
+}
+
+
+function buildTree(iteration, radius, decay, length) {
+  // iteration = iteration < 2 ? 2 : iteration;
+  let l_str = generate(axiom, iteration, 0);
+  total_tree_geo = new THREE.BufferGeometry();
+  total_leaf_geo = new THREE.BufferGeometry();
+  var quaternion = new THREE.Quaternion();
+  let start_point = new THREE.Vector3(0, -50, 0);
+  let trunks = [];
+  let leaves = [];
+  let radius_start = radius;
+  let thin_factor = decay;
+  let branch_length = length;
+  const angle = Math.PI / 7;
+  const stack = [];
+  for (var i = 0; i < l_str.length; i++) {
+    var char = l_str[i];
+    if (char == "F") {
+      //determine endpoint with quaternion rotation
+      const dir = new THREE.Vector3(0, branch_length, 0);
+      dir.applyQuaternion(quaternion);
+      const end_point = start_point.clone();
+      end_point.add(dir);
+
+      //determine start radius and end radius of the branch
+      const radius_end = radius_start * thin_factor;
+
+      //create branch and leaf geometry
+      const curr_branch = makeBranch(
+        start_point.clone(),
+        end_point.clone(),
+        radius_start,
+        radius_end,
+        quaternion.clone(),
+        branch_length
+      );
+
+      //push to render group
+      trunks.push(curr_branch.clone());
+
+      //update variables
+      start_point = end_point;
+      radius_start = radius_end;
+      continue;
+    } else if (char == "+") {
+      quaternion.multiply(
+        new THREE.Quaternion().setFromAxisAngle(
+          new THREE.Vector3(0, 0, 1),
+          angle
+        )
+      );
+      quaternion.normalize();
+    } else if (char == "-") {
+      quaternion.multiply(
+        new THREE.Quaternion().setFromAxisAngle(
+          new THREE.Vector3(0, 0, 1),
+          -angle
+        )
+      );
+      quaternion.normalize();
+    } else if (char == "[") {
+      const new_obj = new Object();
+      new_obj.pos = new THREE.Vector3(
+        start_point.x,
+        start_point.y,
+        start_point.z
+      );
+      new_obj.qua = new THREE.Quaternion(
+        quaternion.x,
+        quaternion.y,
+        quaternion.z
+      );
+      new_obj.radius = radius_start;
+      stack.push(new_obj);
+    } else if (char == "]") {
+      const curr_leaf = makeLeaf(start_point.clone());
+      leaves.push(curr_leaf.clone());
+      const tuple = stack.pop();
+      if (tuple) {
+        quaternion.copy(tuple.qua);
+        start_point.copy(tuple.pos);
+        radius_start = tuple.radius;
+      }
+    } else if (char == "<") {
+      quaternion.multiply(
+        new THREE.Quaternion().setFromAxisAngle(
+          new THREE.Vector3(1, 0, 0),
+          angle
+        )
+      );
+      quaternion.normalize();
+    } else if (char == ">") {
+      quaternion.multiply(
+        new THREE.Quaternion().setFromAxisAngle(
+          new THREE.Vector3(1, 0, 0),
+          -angle
+        )
+      );
+      quaternion.normalize();
+    }
+  }
+
+  if (trunks.length > 0) {
+    total_tree_geo = BufferGeometryUtils.mergeGeometries(trunks);
+    const trunk_mat = new THREE.MeshLambertMaterial({ color: 12887172 });
+    var tree_mesh = new THREE.Mesh(total_tree_geo, trunk_mat);
+    tree_mesh.name = "tree_mesh";
+    scene.add(tree_mesh);
+  }
+
+  if (leaves.length > 0) {
+    total_leaf_geo = BufferGeometryUtils.mergeGeometries(leaves);
+    const leaf_mat = new THREE.MeshLambertMaterial({ color: "green" });
+    var leaf_mesh = new THREE.Mesh(total_leaf_geo, leaf_mat);
+    leaf_mesh.name = "leaf_mesh";
+    scene.add(leaf_mesh);
+  }
+}
+
+function makeBranch(start, end, s_radius, e_radius, quaternion, length) {
+  const trunk_geo = new THREE.CylinderGeometry(
+    e_radius,
+    s_radius,
+    length,
+    3,
+    1
+  );
+  trunk_geo.applyQuaternion(quaternion);
+
+  const pos = new THREE.Vector3(
+    start.x + (end.x - start.x) / 2,
+    start.y + (end.y - start.y) / 2,
+    start.z + (end.z - start.z) / 2
+  );
+  trunk_geo.translate(pos);
+  return trunk_geo;
+}
+
+function makeLeaf(center) {
+  const leaf_geo = new THREE.SphereGeometry(20, 2, 2);
+
+  const pos = new THREE.Vector3(center.x, center.y, center.z);
+  leaf_geo.translate(pos);
+  return leaf_geo;
+}
+
 
 // function to create dias that will hold the tree
 function createDias() {
@@ -149,6 +299,67 @@ function createDias() {
 
 }
 
+function createWaterfall() {
+
+  // Define a waterfall, assuming it's a thin, vertical box
+  const waterfallVerticalGeometry = new THREE.PlaneGeometry(2, 10);
+  const waterfallHorizontalGeometry = new THREE.PlaneGeometry(2, 5);
+
+  const waterfallMaterial = new THREE.MeshToonMaterial({ color: 0x71cbaa, side: THREE.DoubleSide });
+
+
+  const material = new THREE.ShaderMaterial({
+    vertexShader: `
+        varying vec3 vNormal;
+        varying vec3 vPosition;
+        void main() {
+            vNormal = normal;
+            vPosition = position;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    fragmentShader: `
+        varying vec3 vNormal;
+        varying vec3 vPosition;
+        uniform vec3 color1;
+        uniform vec3 color2;
+        uniform vec3 lightDirection;
+        void main() {
+          // Calculate lighting
+          float lightIntensity = max(dot(normalize(vNormal), lightDirection), 0.0);
+
+          // Quantize the light intensity for toon effect
+          float quantizedIntensity = floor(lightIntensity * 6.0) / 3.0;
+
+          // Gradient mix
+          float mixRatio = clamp((vPosition.y + 3.0), 0.0, 1.0);
+          vec3 gradient = mix(color2, color1, mixRatio);
+
+          // Apply quantized lighting
+          vec3 toonShadedColor = gradient * quantizedIntensity;
+
+          gl_FragColor = vec4(toonShadedColor, 1.0);
+      }
+    `,
+    uniforms: {
+        color1: { value: new THREE.Color(0x71cbaa) }, //light peach
+        color2: { value: new THREE.Color(0x46a493) },  // tan
+        lightDirection: { value: new THREE.Vector3(-5, 5, 10).normalize() }
+    }
+  });
+
+  const waterfallVertical = new THREE.Mesh(waterfallVerticalGeometry, material);
+  const waterfallHortizontal = new THREE.Mesh(waterfallHorizontalGeometry, waterfallMaterial);
+  waterfallHortizontal.rotateX(-Math.PI * 0.5);
+
+  waterfallVertical.position.set(1, -4.48, 5.01);
+  waterfallHortizontal.position.set(1, 0.52, 2.51);
+
+  scene.add(waterfallVertical);
+  scene.add(waterfallHortizontal);
+
+}
+
 // Function to create a floating island
 function createFloatingIsland() {
   // Create geometries for the island
@@ -156,13 +367,6 @@ function createFloatingIsland() {
   const islandGeometry = new THREE.BoxGeometry(10, 1, 10);
 
   const grassGeometry = new THREE.PlaneGeometry(10, 10);
-
-  // Define a waterfall, assuming it's a thin, vertical box
-  const waterfallVerticalGeometry = new THREE.PlaneGeometry(2, 10);
-  const waterfallHorizontalGeometry = new THREE.PlaneGeometry(2, 5);
-
-  // // Define a building, assuming it's a simple rectangular prism
-  // const buildingGeometry = new THREE.BoxGeometry(2, 3, 2);
 
   // // Define a tower, assuming it's a cylinder
   const towerGeometry = new THREE.CylinderGeometry(0.75, 0.75, 5, 32);
@@ -174,8 +378,6 @@ function createFloatingIsland() {
   // Create materials for the island
   const islandMaterial = new THREE.MeshToonMaterial({ color: 0xecbea0 });
   const grassMaterial = new THREE.MeshToonMaterial({color: 0xe6eab5 });
-  const waterfallMaterial = new THREE.MeshToonMaterial({ color: 0x71cbaa, side: THREE.DoubleSide });
-  // const buildingMaterial = new THREE.MeshToonMaterial({color: 0xfedcc1});
   
   // tan: 0xfedcc1, blue: 0x5e6679
   const towerMaterial = new THREE.MeshToonMaterial({ color: 0xfedcc1 });
@@ -187,21 +389,12 @@ function createFloatingIsland() {
   const grass = new THREE.Mesh(grassGeometry, grassMaterial);
   grass.rotateX(-Math.PI * 0.5);
 
-  const waterfallVertical = new THREE.Mesh(waterfallVerticalGeometry, waterfallMaterial);
-  const waterfallHortizontal = new THREE.Mesh(waterfallHorizontalGeometry, waterfallMaterial);
-  waterfallHortizontal.rotateX(-Math.PI * 0.5);
-
-  // const building = createDias(0xfedcc1, 0x5e6679, 2, 3, 2, 0.8);
-
   const tower = new THREE.Mesh(towerGeometry, towerMaterial);
   const dome = new THREE.Mesh(domeGeometry, domeMaterial);
 
-  // // Position your objects, this is just an example
   island.position.set(0, 0, 0);
   grass.position.set(0, 0.51 ,0);
-  waterfallVertical.position.set(1, -4.48, 5.01);
-  waterfallHortizontal.position.set(1, 0.52, 2.51);
-  // building.position.set(-2, 1.5, -2);
+  
   tower.position.set(3, 4, 3);
   dome.position.set(-2, 3, -2);
 
@@ -209,130 +402,107 @@ function createFloatingIsland() {
   // Add objects to the scene
   scene.add(island);
   scene.add(grass);
-  scene.add(waterfallVertical);
-  scene.add(waterfallHortizontal);
+  createWaterfall();
   createDias();
   scene.add(tower);
   scene.add(dome);
 
   // Add the tree to the island
-  // createTree();
+  // buildTree();
 
-  // Add a waterfall
-  // ... [Create waterfall using PlaneGeometry and animate it]
 }
 
-// Create the floating island
-createFloatingIsland();
+const addCliff = (width, height, depth, x, y, z) => {
+  const cliffGeometry = new THREE.BoxGeometry(width, height, depth);
+  const cliffMaterial = new THREE.MeshLambertMaterial({ color: 0xecbea0 });
+  const cliff = new THREE.Mesh(cliffGeometry, cliffMaterial);
+  cliff.position.set(x, y, z);
+  scene.add(cliff);
+};
+
+const addConeCliff = (radius, height, x, y, z, rotate) => {
+  const geometry = new THREE.ConeGeometry(radius, height, 4); // 4-sided cone for a triangular base
+  const material = new THREE.MeshLambertMaterial({ color: 0xecbea0 });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.set(x, y, z);
+  mesh.rotateX(-Math.PI);
+  mesh.rotateY(Math.PI + rotate)
+  scene.add(mesh);
+};
 
 
-let foliagePosY = 3;
-
-// Grow tree when clicked
-function setupCounter(container) {
-  const foliageGeometry = new THREE.ConeGeometry(2, 4, 32);
-  const foliageMaterial = new THREE.MeshLambertMaterial({ color: 0x00FF00 });
-  // Append the counter button to the provided container
-  const counterButton = document.createElement('button');
-  counterButton.textContent = 'Grow';
-  container.appendChild(counterButton);
-  // Handle button click to grow the tree
-  counterButton.addEventListener('click', () => {
-    foliagePosY += 2;
-    const moreFoliage = new THREE.Mesh(foliageGeometry, foliageMaterial);
-    moreFoliage.position.set(0, foliagePosY, 0);
-    scene.add(moreFoliage);
-  });
-}
-
-
-// Create materials for the skybox
-const skyColor = new THREE.Color('lightblue');
-const skyboxMaterials = [
+function setupSkyBox() {
+  // Create materials for the skybox
+  const skyColor = new THREE.Color("lightblue");
+  const skyboxMaterials = [
     new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Left side
     new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Right side
     new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Top side
     new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Bottom side
     new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Front side
-    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide })  // Back side
-];
+    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Back side
+  ];
 
-// Create the skybox
-const skyboxGeometry = new THREE.BoxGeometry(100, 100, 100);
-const skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterials);
-scene.add(skybox);
+  // Create the skybox
+  const skyboxGeometry = new THREE.BoxGeometry(100, 100, 100);
+  skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterials);
+  scene.add(skybox);
+}
 
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0, 0, 0); // Set the point at which the camera looks
-controls.update(); // Update controls
+function setupControl() {
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.target.set(0, 0, 0); // Set the point at which the camera looks
+  controls.update();
+}
 
-
-// Mesh, both object color and wireframe, added as a group 
-// this means the group has a different center pos? see the cube floating around
-const cube2 = new THREE.Mesh(cubeGeometry, cubeMaterial);
-const cubeWireframe2 = new THREE.Mesh(cubeGeometry, cubeWireframeMaterial);
-cube2.position.set(-5, 13, 12);
-cubeWireframe2.position.set(-5, 13, 12);
-const cubeGroup = new THREE.Group();
-cubeGroup.add(cube2);
-cubeGroup.add(cubeWireframe2);
-scene.add(cubeGroup);
-
-// another one, added as separate meshes
-const cube3 = new THREE.Mesh(cubeGeometry, cubeMaterial);
-const cubeWireframe3 = new THREE.Mesh(cubeGeometry, cubeWireframeMaterial);
-cube3.position.set(-5, 13, 12);
-cubeWireframe3.position.set(-5, 13, 12);
-scene.add(cube3);
-scene.add(cubeWireframe3);
 
 // Animation Loop
 function animate() {
   requestAnimationFrame(animate);
-  
-  cube1.rotation.x += 0.01;
-  cube1.rotation.y += 0.01;
-
-  cubeWireframe1.rotation.y += 0.01;
-  cubeWireframe1.rotation.z += 0.01;
-
-  // this is potentially how we can add clouds and birds (any chronically occuring objects)? although might be inefficient
-  cubeGroup.rotation.z += 0.01;
-
-  cube3.rotation.x += 0.01;
-  cube3.rotation.z += 0.01;
-  cubeWireframe3.rotation.x += 0.01;
-  cubeWireframe3.rotation.z += 0.01;
-
-  controls.update();
 	renderer.render( scene, camera );
 }
-animate();
 
-
-//   <div>
-//     <a href="https://vitejs.dev" target="_blank">
-//       <img src="${viteLogo}" class="logo" alt="Vite logo" />
-//     </a>
-//     <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank">
-//       <img src="${javascriptLogo}" class="logo vanilla" alt="JavaScript logo" />
-//     </a>
-//     <h1>Hello Vite!</h1>
-//     <div class="card">
-//       <button id="counter" type="button"></button>
-//     </div>
-//     <p class="read-the-docs">
-//       Click on the Vite logo to learn more
-//     </p>
-//   </div>
 
 document.querySelector('#app').innerHTML = `
-  <div>
-    <div class="card">
-      <button id="counter" type="button"></button>
-    </div>
+<div>
+  <div class="card">
+    <input type="range" min="0" max="100" value="0" class="slider" id="mySlider">
+
   </div>
+</div>
 `
 
-// Call the setupCounter function with the container element
-setupCounter(document.querySelector('#counter'));
+function setupSider() {
+  const slider = document.getElementById("mySlider");
+  slider.addEventListener("input", () => {
+    //delete existing tree mesh
+    var tree_mesh = scene.getObjectByName("tree_mesh");
+    scene.remove(tree_mesh);
+
+    var leaf_mesh = scene.getObjectByName("leaf_mesh");
+    scene.remove(leaf_mesh);
+
+    //configure new tree mesh iteration, radius, and decay factor
+    const value = slider.value;
+    const radius = 3 + (5 * value) / 100;
+    const decay_factor = Math.min(0.95, 1 - 0.05 / (value / 50));
+    const iter = Math.ceil(value / 20);
+    const length = (10 * value) / 100;
+
+    buildTree(iter, radius, decay_factor, length);
+  });
+}
+
+
+function onWindowResize() {
+  camera.aspect = container.clientWidth / container.clientHeight;
+
+  camera.updateProjectionMatrix();
+
+  renderer.setSize(container.clientWidth, container.clientHeight);
+}
+
+window.addEventListener("resize", onWindowResize);
+
+init();
+animate();
