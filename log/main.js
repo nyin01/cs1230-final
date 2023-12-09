@@ -19,6 +19,11 @@ let total_tree_geo = new THREE.BufferGeometry();
 let total_leaf_geo = new THREE.BufferGeometry();
 let container;
 
+// weather
+const rain = generateRain();
+const snow = generateSnow();
+const wind = generateWind();
+
 function init() {
   // Scene
   container = document.querySelector("#app");
@@ -33,6 +38,8 @@ function init() {
   // setupGeometry();
   buildTree(5);
   setupSider();
+
+  setUpWeather();
 }
 
 function setupCamera() {
@@ -237,31 +244,16 @@ function makeLeaf(center) {
   return leaf_geo;
 }
 
-// weather
-const rain = generateRain();
-const snow = generateSnow();
-const wind = generateWind();
-scene.add(rain);
-scene.add(snow);
-scene.add(wind);
+function setUpWeather() {
+  // weather
+  scene.add(rain);
+  scene.add(snow);
+  scene.add(wind);
+}
 
 // Animation Loop
 function animate() {
   requestAnimationFrame(animate);
-  
-  cube1.rotation.x += 0.01;
-  cube1.rotation.y += 0.01;
-
-  cubeWireframe1.rotation.y += 0.01;
-  cubeWireframe1.rotation.z += 0.01;
-
-  // this is potentially how we can add clouds and birds (any chronically occuring objects)? although might be inefficient
-  cubeGroup.rotation.z += 0.01;
-
-  cube3.rotation.x += 0.01;
-  cube3.rotation.z += 0.01;
-  cubeWireframe3.rotation.x += 0.01;
-  cubeWireframe3.rotation.z += 0.01;
 
   // animate rain and snow to fall down vertically
   rain.rotation.y += 0.01;
