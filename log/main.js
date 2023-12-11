@@ -17,11 +17,9 @@ let axiom = "X";
 let total_tree_geo = new THREE.BufferGeometry();
 let total_leaf_geo = new THREE.BufferGeometry();
 let container;
-
-// weather
-const rain = generateRain();
-const snow = generateSnow();
-const wind = generateWind();
+let rain;
+let snow;
+let wind;
 
 function init() {
   // Scene
@@ -48,8 +46,8 @@ function init() {
   // Create the floating island
   createFloatingIsland();
 
-  // weather
-  setUpWeather();
+  setWeather();
+
 }
 
 function setupCamera() {
@@ -288,7 +286,7 @@ const addConeCliff = (radius, height, x, y, z, rotate) => {
 
 function setupSkyBox() {
   // Create materials for the skybox
-  const skyColor = new THREE.Color("lightblue");
+  const skyColor = new THREE.Color("black");
   const skyboxMaterials = [
     new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Left side
     new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Right side
@@ -455,25 +453,54 @@ function makeLeaf(center) {
   return leaf_geo;
 }
 
-function setUpWeather() {
-  // weather
-  scene.add(rain);
+
+function setSnow(k) {
+  if (snow) {
+    // Remove existing snow from the scene if it exists
+    scene.remove(snow);
+  }
+  snow = generateSnow(k);
   scene.add(snow);
-  scene.add(wind);
 }
+
+function setWeather() {
+  setSnow(0.5);
+}
+
+function updateWeather(k_snow=0, k_rain=0, k_wind=0, snow_drop=0.1, rain_drop=0.5, wind_drift=0.01) {
+  // y is vertical direction!
+
+  // weather
+  setSnow(k_snow);
+  if (k_snow > 0) {
+    // snow.position.y -= 0.1;
+    // snow.rotation.x += 0.01;
+  }
+
+  // if (k_rain > 0) {
+  //   setRain(k_rain);
+  //   scene.add(rain);
+  //   rain.position.y -= rain_drop;
+  //   rain.rotation.x += wind_drift;
+  // }
+
+  // if (k_wind > 0) {
+  //   setWind(k_wind);
+  //   scene.add(wind);
+  //   wind.position.x += wind_drift * 100;
+  // }
+
+}
+
+
 
 // Animation Loop
 function animate() {
   requestAnimationFrame(animate);
 
-  // animate rain and snow to fall down vertically
-  rain.rotation.y += 0.01;
-  rain.position.y -= 0.1;
-  snow.rotation.y += 0.01;
-  snow.position.y -= 0.1;
-
-  // animate wind 
-  wind.position.x += 2;
+  let k = 0.5
+  setSnow(k);
+  updateWeather(k,k,k)
 
   controls.update();
 	renderer.render( scene, camera );
