@@ -24,6 +24,13 @@ let wind;
 let iteration = 1;
 let growth = 0;
 
+let k_snow;
+let k_rain;
+let k_wind;
+let snow_drop;
+let rain_drop;
+let wind_drift;
+
 function init() {
   // Scene
   container = document.querySelector("#app");
@@ -497,17 +504,16 @@ function setSnow(k) {
 }
 
 function setWeather() {
-  setSnow(0.5);
+  setSnow(0);
 }
 
-function updateWeather(k_snow=0, k_rain=0, k_wind=0, snow_drop=0.1, rain_drop=0.5, wind_drift=0.01) {
+function animateWeather(k_snow=0, k_rain=0, k_wind=0, snow_drop=0.01, rain_drop=0.5, wind_drift=0.1) {
   // y is vertical direction!
 
   // weather
-  setSnow(k_snow);
   if (k_snow > 0) {
-    // snow.position.y -= 0.1;
-    // snow.rotation.x += 0.01;
+    snow.position.y -= k_snow;
+    snow.position.x += wind_drift;
   }
 
   // if (k_rain > 0) {
@@ -530,11 +536,7 @@ function updateWeather(k_snow=0, k_rain=0, k_wind=0, snow_drop=0.1, rain_drop=0.
 // Animation Loop
 function animate() {
   requestAnimationFrame(animate);
-
-  let k = 0.5
-  setSnow(k);
-  updateWeather(k,k,k)
-
+  animateWeather(k_snow, k_rain, k_wind, snow_drop, rain_drop, wind_drift);
   controls.update();
   renderer.render(scene, camera);
 }
@@ -551,6 +553,7 @@ function animate() {
 const params = {
   growth: 0,
   iter: 1,
+  snow: 0,
 };
 
 function setupSlider() {
@@ -591,6 +594,15 @@ function setupSlider() {
 
       buildTree(iteration, growth);
     });
+  
+  gui
+    .add(params, "snow", 0, 1)
+    .step(0.1)
+    .name("Snow")
+    .onChange(function (value) {
+      k_snow = value;
+      setSnow(value);
+    });
 
   // const slider = document.getElementById("mySlider");
   // slider.addEventListener("input", () => {
@@ -624,3 +636,4 @@ window.addEventListener("resize", onWindowResize);
 
 init();
 animate();
+

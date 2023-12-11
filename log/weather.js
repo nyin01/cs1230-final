@@ -7,7 +7,7 @@ function generateParticle(k=0.5) {
   }
   let geometry = new THREE.BufferGeometry();
   let vertices = [];
-  for (let i = 0; i < 10000 * k; i++) {
+  for (let i = 0; i < 100000 * k; i++) {
     vertices.push(
       Math.random() * 500 - 100,
       Math.random() * 500 - 100,
