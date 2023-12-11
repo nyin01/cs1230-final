@@ -1,11 +1,19 @@
-import './style.css'
+import "./style.css";
+// import { setupCounter } from './counter.js'
 
-import * as THREE from 'three';
+import * as THREE from "three";
 import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { generate } from './l_util';
-// weather utils
+import { generate } from "./l_util";
 import { generateRain, generateSnow, generateWind } from './weather.js';
+import { createFloatingIsland, 
+        createFloatingIslandGrass,
+        createWaterfallHorizontal,
+        createWaterfallVertical,
+        createDias,
+        createDiasGrass
+      
+      } from './island';
 
 let camera;
 let renderer;
@@ -18,65 +26,106 @@ let total_tree_geo = new THREE.BufferGeometry();
 let total_leaf_geo = new THREE.BufferGeometry();
 let container;
 
+// weather
+const rain = generateRain();
+const snow = generateSnow();
+const wind = generateWind();
+
+// island
+const island = createFloatingIsland();
+const islandGrass = createFloatingIslandGrass();
+const wfH = createWaterfallHorizontal();
+const wfV = createWaterfallVertical();
+const dias = createDias();
+const diasGrass = createDiasGrass();
+
 function init() {
   // Scene
   container = document.querySelector("#app");
   scene = new THREE.Scene();
   scene.background = new THREE.Color("lightblue");
 
+  // basics
   setupCamera();
   setupLights();
   setupRenderer();
   setupSkyBox();
   setupControl();
-  // setupGeometry();
-  addCliff(2, 1.5, 10, 4, -1.25, 0); // big cliff
-  addCliff(2, 4, 10, 2, -2.5, 0); // big cliff
 
-  addConeCliff(1.3, 4, 3.7, -4, 3.8, 1);     // Triangular cliff
+  // tree
+  buildTree(5);
+  setupSlider();
 
   // Create the floating island
-  createFloatingIsland();
-  buildTree(5);
-  setupSider();
+  setUpIsland();
+
+  // weather
+  setUpWeather();
 }
 
 function setupCamera() {
-  /**
-   * PERSPECTIVE CAMERA
-   *
-   *  1) Field of View is the extent of the scene that is seen on the display at any given moment. The value is in degrees.
-   *  2) Aspect Ratio: use the width of the element divided by the height, or you'll get squished image
-   *  3) Near: if objects are closer than 'near', won't be rendered
-   *  4) Far: if objects are farther than 'far', won't be rendered
-   */
-  camera = new THREE.PerspectiveCamera(
-    75,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000
-  );
-  camera.position.set(0, 20, 250);
+  const aspect = window.innerWidth / window.innerHeight;
+  const width = window.innerWidth
+  const height = window.innerHeight
+  camera = new THREE.OrthographicCamera(width / - 2, width / 2, height / 2, height / - 2, -1000, 5000)  
+  camera.position.set(20, 20, 20)
+  camera.up = new THREE.Vector3(0, 1, 0)
 }
 
 function setupRenderer() {
   // Renderer
-  renderer = new THREE.WebGLRenderer();
+  renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+
+  renderer.setPixelRatio(window.devicePixelRatio);
+
+  renderer.shadowMap.enabled = true;
+
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
   renderer.setSize(window.innerWidth * 0.9, window.innerHeight * 0.9);
+
   document.body.appendChild(renderer.domElement);
 }
 
 
 function setupLights() {
   // Add lighting
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-  directionalLight.position.set(-5, 5, 5);
+  const pointLight = new THREE.DirectionalLight(0xffffff, 1);
+  pointLight.position.set(10, 10, 10);
+  pointLight.castShadow = true;
+  scene.add(pointLight);
+
+  const ambientLight = new THREE.AmbientLight(0xffffff, 1);
   ambientLight.position.set(1, 1, 1);
-  scene.add(directionalLight);
+  ambientLight.castShadow = true;
   scene.add(ambientLight);
 }
 
+function setupSkyBox() {
+  // Create materials for the skybox
+  const skyColor = new THREE.Color("lightblue");
+  const skyboxMaterials = [
+    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Left side
+    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Right side
+    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Top side
+    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Bottom side
+    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Front side
+    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Back side
+  ];
+
+  // Create the skybox
+  const skyboxGeometry = new THREE.BoxGeometry(300, 300, 300);
+  skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterials);
+  scene.add(skybox);
+}
+
+function setupControl() {
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.target.set(0, 0, 0); // Set the point at which the camera looks
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.15;
+  controls.update();
+}
 
 function buildTree(iteration, radius, decay, length) {
   // iteration = iteration < 2 ? 2 : iteration;
@@ -223,269 +272,22 @@ function makeLeaf(center) {
   return leaf_geo;
 }
 
-
-// function to create dias that will hold the tree
-function createDias() {
-  // const building = createDias(0xfedcc1, 0x5e6679, 2, 3, 2, 0.8);
-  
-  var bigCubeGeometry = new THREE.BoxGeometry(50, 15, 50);
-  const bigGrassGeometry = new THREE.PlaneGeometry(50, 50);
-  var smallCubeGeometry = new THREE.BoxGeometry(30, 7, 30);
-  const smallGrassGeometry = new THREE.PlaneGeometry(30, 30);
-
-  
-  // var cubeMaterial = new THREE.MeshPhongMaterial({ color: 0xfedcc1 });
-
-  const material = new THREE.ShaderMaterial({
-    vertexShader: `
-        varying vec3 vNormal;
-        varying vec3 vPosition;
-        void main() {
-            vNormal = normal;
-            vPosition = position;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-    `,
-    fragmentShader: `
-      varying vec3 vNormal;
-      varying vec3 vPosition;
-      
-      uniform vec3 color1;
-      uniform vec3 color2;
-
-      // out vec4 fragColor;
-
-      uniform vec3 lightDirection;
-      
-      // uniform float k_a;
-      // uniform float k_d;
-
-      void main() {
-        // fragColor = vec4(1.0);
-        // fragColor = vec4(abs(worldSpaceNorm), 1.0);
-        // fragColor = vec4(k_a);
-
-        // vec3 L = normalize(vec3(worldSpaceLightPos[0]-worldSpacePos[0],
-        //   worldSpaceLightPos[1]-worldSpacePos[1],
-        //   worldSpaceLightPos[2]-worldSpacePos[2]));
-
-        // float diffuseIntensity = max(dot(L, worldSpaceNorm), 0.0);
-
-        // fragColor = vec4(k_a + k_d * diffuseIntensity);
-
-        // // 1. Calculate the reflected light vector R using the reflect() function.
-        // vec3 R = normalize(reflect(-L, worldSpaceNorm));
-
-        // // 2. Calculate the surface-to-camera direction vector E.
-        // vec3 E = normalize(worldSpaceCamPos.xyz - worldSpacePos);
-
-        // // 3. Calculate the specular intensity using dot() and the vectors R and E, as well as the exponential function pow().
-        // float specularIntensity = pow(max(dot(R, E), 0.0), shiny);
-
-        // // 4. Finally, add the specular intensity scaled by the specular coefficient to the output color.
-        // fragColor += vec4(specularCoef * specularIntensity);
-
-        // Calculate lighting
-        float lightIntensity = max(dot(normalize(vNormal), lightDirection), 0.0);
-
-        // Quantize the light intensity for toon effect
-        float quantizedIntensity = floor(lightIntensity * 4.0) / 3.0;
-
-        // Gradient mix
-        float mixRatio = clamp((vPosition.y + 0.5), 0.0, 1.0);
-        vec3 gradient = mix(color2, color1, mixRatio);
-
-        // Apply quantized lighting
-        vec3 toonShadedColor = gradient * quantizedIntensity;
-
-        gl_FragColor = vec4(toonShadedColor, 1.0);
-      }
-    `,
-    uniforms: {
-        color1: { value: new THREE.Color(0xfedcc1) }, //light peach
-        color2: { value: new THREE.Color(0xecbea0) },  // tan
-        lightDirection: { value: new THREE.Vector3(-5, 5, 5).normalize() },
-    }
-});
-  
-  const dias = new THREE.Mesh(bigCubeGeometry, material);
-  dias.position.set(0, -47.5, 0);
-  scene.add(dias);
-
-  const grassMaterial = new THREE.MeshToonMaterial({color: 0xe6eab5 });
-
-  const biggrass = new THREE.Mesh(bigGrassGeometry, grassMaterial);
-  biggrass.rotateX(-Math.PI * 0.5);
-  
-  biggrass.position.set(0, -39.9 , 0);
-
-  scene.add(biggrass);
-
+function setUpWeather() {
+  // weather
+  scene.add(rain);
+  scene.add(snow);
+  scene.add(wind);
 }
 
-function createWaterfall() {
-
-  // Define a waterfall, assuming it's a thin, vertical box
-  const waterfallVerticalGeometry = new THREE.PlaneGeometry(20, 100);
-  const waterfallHorizontalGeometry = new THREE.PlaneGeometry(20, 50);
-
-  const waterfallMaterial = new THREE.MeshToonMaterial({ color: 0x71cbaa, side: THREE.DoubleSide });
-
-
-  const material = new THREE.ShaderMaterial({
-    vertexShader: `
-        varying vec3 vNormal;
-        varying vec3 vPosition;
-        void main() {
-            vNormal = normal;
-            vPosition = position;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-    `,
-    fragmentShader: `
-        varying vec3 vNormal;
-        varying vec3 vPosition;
-        uniform vec3 color1;
-        uniform vec3 color2;
-
-        uniform vec3 lightDirection;
-        void main() {
-          // Calculate lighting
-          float lightIntensity = max(dot(normalize(vNormal), lightDirection), 0.0);
-
-          // Quantize the light intensity for toon effect
-          float quantizedIntensity = floor(lightIntensity * 6.0) / 3.0;
-
-          // Gradient mix
-          float mixRatio = clamp((vPosition.y + 10.0), 0.0, 1.0);
-          vec3 gradient = mix(color2, color1, mixRatio);
-
-          // Apply quantized lighting
-          vec3 toonShadedColor = gradient * quantizedIntensity;
-
-          gl_FragColor = vec4(toonShadedColor, 1.0);
-      }
-    `,
-    uniforms: {
-        color1: { value: new THREE.Color(0x71cbaa) }, //light peach
-        color2: { value: new THREE.Color(0x46a493) },  // tan
-        lightDirection: { value: new THREE.Vector3(-5, 5, 10).normalize() },
-    },
-    side: THREE.DoubleSide // Render both sides
-  });
-
-  const waterfallVertical = new THREE.Mesh(waterfallVerticalGeometry, material);
-  const waterfallHortizontal = new THREE.Mesh(waterfallHorizontalGeometry, waterfallMaterial);
-  waterfallHortizontal.rotateX(-Math.PI * 0.5);
-
-  waterfallVertical.position.set(10, -104.7, 75.1);
-  waterfallHortizontal.position.set(10, -54.81, 50);
-
-  scene.add(waterfallVertical);
-  scene.add(waterfallHortizontal);
-
-}
-
-// Function to create a floating island
-function createFloatingIsland() {
-  // Create geometries for the island
-  // Define the main island platform
-  const islandGeometry = new THREE.BoxGeometry(200, 10, 150);
-
-  const grassGeometry = new THREE.PlaneGeometry(200, 150);
-
-  // // Define a tower, assuming it's a cylinder
-  const towerGeometry = new THREE.CylinderGeometry(7.5, 7.5, 50, 32);
-
-  // // For the domed roofs, we could use a half-sphere geometry
-  const domeGeometry = new THREE.SphereGeometry(10, 32, 32, 0, Math.PI * 2, 0, Math.PI / 2);
-
-
-  // Create materials for the island
-  const islandMaterial = new THREE.MeshToonMaterial({ color: 0xecbea0 });
-  const grassMaterial = new THREE.MeshToonMaterial({color: 0xe6eab5 });
-  
-  // tan: 0xfedcc1, blue: 0x5e6679
-  const towerMaterial = new THREE.MeshToonMaterial({ color: 0xfedcc1 });
-  const domeMaterial = new THREE.MeshToonMaterial({ color: 0xe6eab5 });
-
-  // Combine geometries and materials for the island
-  const island = new THREE.Mesh(islandGeometry, islandMaterial);
-
-  const grass = new THREE.Mesh(grassGeometry, grassMaterial);
-  grass.rotateX(-Math.PI * 0.5);
-
-  const tower = new THREE.Mesh(towerGeometry, towerMaterial);
-  const dome = new THREE.Mesh(domeGeometry, domeMaterial);
-
-  island.position.set(0, -60, 0);
-  grass.position.set(0, -54.91 ,0);
-  
-  tower.position.set(3, 4, 3);
-  dome.position.set(-2, 3, -2);
-
-
-  // Add objects to the scene
+function setUpIsland() {
   scene.add(island);
-  scene.add(grass);
-  createWaterfall();
-  createDias();
-  // scene.add(tower);
-  // scene.add(dome);
+  scene.add(islandGrass);
+  scene.add(wfH);
+  scene.add(wfV);
+  scene.add(dias);
+  scene.add(diasGrass);
+
 }
-
-const addCliff = (width, height, depth, x, y, z) => {
-  const cliffGeometry = new THREE.BoxGeometry(width, height, depth);
-  const cliffMaterial = new THREE.MeshLambertMaterial({ color: 0xecbea0 });
-  const cliff = new THREE.Mesh(cliffGeometry, cliffMaterial);
-  cliff.position.set(x, y, z);
-  scene.add(cliff);
-};
-
-const addConeCliff = (radius, height, x, y, z, rotate) => {
-  const geometry = new THREE.ConeGeometry(radius, height, 4); // 4-sided cone for a triangular base
-  const material = new THREE.MeshLambertMaterial({ color: 0xecbea0 });
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.position.set(x, y, z);
-  mesh.rotateX(-Math.PI);
-  mesh.rotateY(Math.PI + rotate)
-  scene.add(mesh);
-};
-
-
-function setupSkyBox() {
-  // Create materials for the skybox
-  const skyColor = new THREE.Color("lightblue");
-  const skyboxMaterials = [
-    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Left side
-    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Right side
-    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Top side
-    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Bottom side
-    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Front side
-    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Back side
-  ];
-
-  // Create the skybox
-  const skyboxGeometry = new THREE.BoxGeometry(300, 300, 300);
-  skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterials);
-  scene.add(skybox);
-}
-
-function setupControl() {
-  controls = new OrbitControls(camera, renderer.domElement);
-  controls.target.set(0, 0, 0); // Set the point at which the camera looks
-  controls.update();
-}
-
-
-// Animation Loop
-// weather
-const rain = generateRain();
-const snow = generateSnow();
-const wind = generateWind();
-scene.add(rain);
-scene.add(snow);
-scene.add(wind);
 
 // Animation Loop
 function animate() {
@@ -504,17 +306,16 @@ function animate() {
 	renderer.render( scene, camera );
 }
 
+document.querySelector("#app").innerHTML = `
+  <div>
+    <div class="card">
+      <input type="range" min="0" max="100" value="0" class="slider" id="mySlider">
 
-document.querySelector('#app').innerHTML = `
-<div>
-  <div class="card">
-    <input type="range" min="0" max="100" value="0" class="slider" id="mySlider">
-
+    </div>
   </div>
-</div>
-`
+`;
 
-function setupSider() {
+function setupSlider() {
   const slider = document.getElementById("mySlider");
   slider.addEventListener("input", () => {
     //delete existing tree mesh
@@ -534,7 +335,6 @@ function setupSider() {
     buildTree(iter, radius, decay_factor, length);
   });
 }
-
 
 function onWindowResize() {
   camera.aspect = container.clientWidth / container.clientHeight;
