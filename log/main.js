@@ -4,6 +4,8 @@ import * as THREE from 'three';
 import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { generate } from './l_util';
+// weather utils
+import { generateRain, generateSnow, generateWind } from './weather.js';
 
 let camera;
 let renderer;
@@ -245,26 +247,58 @@ function createDias() {
         }
     `,
     fragmentShader: `
-        varying vec3 vNormal;
-        varying vec3 vPosition;
-        uniform vec3 color1;
-        uniform vec3 color2;
-        uniform vec3 lightDirection;
-        void main() {
-          // Calculate lighting
-          float lightIntensity = max(dot(normalize(vNormal), lightDirection), 0.0);
+      varying vec3 vNormal;
+      varying vec3 vPosition;
+      
+      uniform vec3 color1;
+      uniform vec3 color2;
 
-          // Quantize the light intensity for toon effect
-          float quantizedIntensity = floor(lightIntensity * 4.0) / 3.0;
+      // out vec4 fragColor;
 
-          // Gradient mix
-          float mixRatio = clamp((vPosition.y + 0.5), 0.0, 1.0);
-          vec3 gradient = mix(color2, color1, mixRatio);
+      uniform vec3 lightDirection;
+      
+      // uniform float k_a;
+      // uniform float k_d;
 
-          // Apply quantized lighting
-          vec3 toonShadedColor = gradient * quantizedIntensity;
+      void main() {
+        // fragColor = vec4(1.0);
+        // fragColor = vec4(abs(worldSpaceNorm), 1.0);
+        // fragColor = vec4(k_a);
 
-          gl_FragColor = vec4(toonShadedColor, 1.0);
+        // vec3 L = normalize(vec3(worldSpaceLightPos[0]-worldSpacePos[0],
+        //   worldSpaceLightPos[1]-worldSpacePos[1],
+        //   worldSpaceLightPos[2]-worldSpacePos[2]));
+
+        // float diffuseIntensity = max(dot(L, worldSpaceNorm), 0.0);
+
+        // fragColor = vec4(k_a + k_d * diffuseIntensity);
+
+        // // 1. Calculate the reflected light vector R using the reflect() function.
+        // vec3 R = normalize(reflect(-L, worldSpaceNorm));
+
+        // // 2. Calculate the surface-to-camera direction vector E.
+        // vec3 E = normalize(worldSpaceCamPos.xyz - worldSpacePos);
+
+        // // 3. Calculate the specular intensity using dot() and the vectors R and E, as well as the exponential function pow().
+        // float specularIntensity = pow(max(dot(R, E), 0.0), shiny);
+
+        // // 4. Finally, add the specular intensity scaled by the specular coefficient to the output color.
+        // fragColor += vec4(specularCoef * specularIntensity);
+
+        // Calculate lighting
+        float lightIntensity = max(dot(normalize(vNormal), lightDirection), 0.0);
+
+        // Quantize the light intensity for toon effect
+        float quantizedIntensity = floor(lightIntensity * 4.0) / 3.0;
+
+        // Gradient mix
+        float mixRatio = clamp((vPosition.y + 0.5), 0.0, 1.0);
+        vec3 gradient = mix(color2, color1, mixRatio);
+
+        // Apply quantized lighting
+        vec3 toonShadedColor = gradient * quantizedIntensity;
+
+        gl_FragColor = vec4(toonShadedColor, 1.0);
       }
     `,
     uniforms: {
@@ -445,8 +479,28 @@ function setupControl() {
 
 
 // Animation Loop
+// weather
+const rain = generateRain();
+const snow = generateSnow();
+const wind = generateWind();
+scene.add(rain);
+scene.add(snow);
+scene.add(wind);
+
+// Animation Loop
 function animate() {
   requestAnimationFrame(animate);
+
+  // animate rain and snow to fall down vertically
+  rain.rotation.y += 0.01;
+  rain.position.y -= 0.1;
+  snow.rotation.y += 0.01;
+  snow.position.y -= 0.1;
+
+  // animate wind 
+  wind.position.x += 2;
+
+  controls.update();
 	renderer.render( scene, camera );
 }
 
