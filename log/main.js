@@ -503,8 +503,17 @@ function setSnow(k) {
   scene.add(snow);
 }
 
+function setWind(k) {
+  if (wind) { // Remove existing wind from the scene if it exists
+    scene.remove(wind);
+  }   
+  wind = generateWind(k);
+  // scene.add(wind); // for now do not visualize wind
+}
+
 function setWeather() {
   setSnow(0);
+  setWind(0);
 }
 
 function animateWeather(k_snow=0, k_rain=0, k_wind=0, snow_drop=0.01, rain_drop=0.5, wind_drift=0.1) {
@@ -513,7 +522,7 @@ function animateWeather(k_snow=0, k_rain=0, k_wind=0, snow_drop=0.01, rain_drop=
   // weather
   if (k_snow > 0) {
     snow.position.y -= k_snow;
-    snow.position.x += wind_drift;
+    snow.position.x += wind_drift * k_wind;
   }
 
   // if (k_rain > 0) {
@@ -523,11 +532,9 @@ function animateWeather(k_snow=0, k_rain=0, k_wind=0, snow_drop=0.01, rain_drop=
   //   rain.rotation.x += wind_drift;
   // }
 
-  // if (k_wind > 0) {
-  //   setWind(k_wind);
-  //   scene.add(wind);
-  //   wind.position.x += wind_drift * 100;
-  // }
+  if (k_wind > 0) {
+    // wind.rotation.x += wind_drift * k_wind * 30;
+  }
 
 }
 
@@ -553,7 +560,9 @@ function animate() {
 const params = {
   growth: 0,
   iter: 1,
+  wind: 0,
   snow: 0,
+  rain: 0,
 };
 
 function setupSlider() {
@@ -593,6 +602,15 @@ function setupSlider() {
       iteration = value;
 
       buildTree(iteration, growth);
+    });
+  
+  gui
+    .add(params, "wind", 0, 1)
+    .step(0.1)
+    .name("Wind")
+    .onChange(function (value) {
+      k_wind = value;
+      setWind(value);
     });
   
   gui

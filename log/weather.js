@@ -33,11 +33,11 @@ export function generateSnow(k) {
 }
 
 export function generateWind(k) {
-  const geometry = new THREE.BufferGeometry();
+  const geometry = generateParticle(k);
   const material = new THREE.LineBasicMaterial({ 
       color: 0xffffff, 
       transparent: true, 
-      opacity: 0.05
+      opacity: 0.03
   });
   const wind = new THREE.LineSegments(geometry, material);
   return wind;
