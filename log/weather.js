@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
 // k [0,1]: 0: no weather, 1: heavy weather
-function generateParticle(k=0.5) {
+function generateParticles(k=0.5) {
   if (k == 0) {
     return new THREE.BufferGeometry();
   }
@@ -19,21 +19,21 @@ function generateParticle(k=0.5) {
 }
 
 export function generateRain(k) {
-  const geometry = generateParticle(k * 10);
+  const geometry = generateParticles(k);
   const material = new THREE.PointsMaterial({ size: 0.2, color: 0x87CEEB, transparent: true, opacity: 0.5 });
   const rain = new THREE.Points(geometry, material);
   return rain;
 }
 
 export function generateSnow(k) {
-  const geometry = generateParticle(k);
+  const geometry = generateParticles(k);
   const material = new THREE.PointsMaterial({ size: 0.3, color: 0xffffff, transparent: true, opacity: 0.8 });
   const snow = new THREE.Points(geometry, material);
   return snow;
 }
 
 export function generateWind(k) {
-  const geometry = generateParticle(k);
+  const geometry = generateParticles(k);
   const material = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.03});
   const wind = new THREE.LineSegments(geometry, material);
   return wind;

@@ -31,6 +31,11 @@ let snow_drop;
 let rain_drop;
 let wind_drift;
 
+let isNight;
+let sun;
+let moon;
+let stars;
+
 function init() {
   // Scene
   container = document.querySelector("#app");
@@ -57,7 +62,7 @@ function init() {
   createFloatingIsland();
 
   setWeather();
-
+  setAstronomy();
 }
 
 function setupCamera() {
@@ -493,6 +498,8 @@ function makeLeaf(center, radius) {
   return leaf_geo;
 }
 
+// ====== WEATHER ======
+// setters will be called by GUI
 
 function setSnow(k) {
   if (snow) {
@@ -521,6 +528,7 @@ function setWind(k) {
 
 function setWeather() {
   setSnow(0);
+  setRain(0);
   setWind(0);
 }
 
@@ -544,12 +552,52 @@ function animateWeather(k_snow=0, k_rain=0, k_wind=0, snow_drop=0.01, rain_drop=
 
 }
 
+// ====== ASTRONOMY ======
+// setters will be called by GUI
 
+function setSun() {
+  sun = generateSun();
+}
+
+function setMoon() {
+  moon = generateMoon();
+}
+
+function setStars() {
+  stars = generateStars();
+}
+
+function setAstronomy() {
+  setSun();
+  setMoon();
+  setStars();
+}
+
+// GUI controlled
+function updateAstronomy(isNight = false) {
+  // if night, sun and moon will be visible, stars will be invisible
+  if (isNight) {
+
+  }
+  // if day, sun and moon will not be visible, stars will be visible
+  else {
+ 
+  }
+}
+
+// not GUI controlled
+function animateAstronomy() {
+  // at all times, sun, moon, and stars will rotate very slowly
+  sun.rotation.x += 0.01;
+  moon.rotation.x += 0.01;
+  stars.rotation.x += 0.01;
+}
 
 // Animation Loop
 function animate() {
   requestAnimationFrame(animate);
   animateWeather(k_snow, k_rain, k_wind, snow_drop, rain_drop, wind_drift);
+  animateAstronomy();
   controls.update();
   renderer.render(scene, camera);
 }
@@ -635,6 +683,15 @@ function setupSlider() {
     .onChange(function (value) {
       k_snow = value;
       setSnow(value);
+    });
+  
+  gui
+    .add(params, "night", 0, 1)
+    .step(1)
+    .name("Night")
+    .onChange(function (value) {
+      isNight = value;
+      updateAstronomy(value);
     });
 
   // const slider = document.getElementById("mySlider");
