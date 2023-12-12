@@ -602,7 +602,7 @@ function animateAstronomy() {
   const moonZ = Math.sin(time + Math.PI) * radius;
   sun.position.set(sunX, sunY, sunZ);
   moon.position.set(moonX, moonY, moonZ);
-  // stars.position.set(sunX, sunY, sunZ);
+  stars.position.set(moonX, moonY, moonZ);
 }
 
 // Animation Loop
