@@ -7,6 +7,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { generate } from "./l_util";
 import { GUI } from "three/addons/libs/lil-gui.module.min.js";
 import { generateRain, generateSnow, generateWind } from "./weather.js";
+import { generateSun, generateMoon, generateStars } from "./astronomy.js";
 
 let camera;
 let renderer;
@@ -557,40 +558,51 @@ function animateWeather(k_snow=0, k_rain=0, k_wind=0, snow_drop=0.01, rain_drop=
 
 function setSun() {
   sun = generateSun();
+  sun.visible = !isNight;
+  scene.add(sun);
 }
 
 function setMoon() {
   moon = generateMoon();
+  moon.visible = isNight;
+  scene.add(moon);
 }
 
 function setStars() {
   stars = generateStars();
+  stars.visible = isNight;
+  scene.add(stars);
 }
 
 function setAstronomy() {
+  isNight = false;
   setSun();
   setMoon();
   setStars();
 }
 
 // GUI controlled
-function updateAstronomy(isNight = false) {
-  // if night, sun and moon will be visible, stars will be invisible
-  if (isNight) {
-
-  }
-  // if day, sun and moon will not be visible, stars will be visible
-  else {
- 
-  }
+function updateAstronomy(isNight) {
+  sun.visible = !isNight;
+  moon.visible = isNight;
+  stars.visible = isNight;
 }
 
 // not GUI controlled
 function animateAstronomy() {
-  // at all times, sun, moon, and stars will rotate very slowly
-  sun.rotation.x += 0.01;
-  moon.rotation.x += 0.01;
-  stars.rotation.x += 0.01;
+  // make sun and moon orbit around the scene
+  const time = Date.now() * 0.0005;
+  const delta = 0.01;
+  const radius = 100;
+  const sunX = Math.cos(time) * radius;
+  const sunY = Math.sin(time) * radius;
+  const sunZ = Math.sin(time) * radius;
+  const moonX = Math.cos(time + Math.PI) * radius;
+  const moonY = Math.sin(time + Math.PI) * radius;
+  const moonZ = Math.sin(time + Math.PI) * radius;
+  sun.position.set(sunX, sunY, sunZ);
+  moon.position.set(moonX, moonY, moonZ);
+  // stars.position.set(sunX, sunY, sunZ);
 }
 
 // Animation Loop
@@ -617,6 +629,7 @@ const params = {
   wind: 0,
   rain: 0,
   snow: 0,
+  night: 0,
 };
 
 function setupSlider() {
@@ -690,8 +703,8 @@ function setupSlider() {
     .step(1)
     .name("Night")
     .onChange(function (value) {
-      isNight = value;
-      updateAstronomy(value);
+      isNight = Boolean(value);
+      updateAstronomy(isNight);
     });
 
   // const slider = document.getElementById("mySlider");
