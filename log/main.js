@@ -591,8 +591,7 @@ function updateAstronomy(isNight) {
 // not GUI controlled
 function animateAstronomy() {
   // make sun and moon orbit around the scene
-  const time = Date.now() * 0.0005;
-  const delta = 0.01;
+  const time = Date.now() * 0.0001;
   const radius = 100;
   const sunX = Math.cos(time) * radius;
   const sunY = Math.sin(time) * radius;
