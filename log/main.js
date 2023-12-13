@@ -655,6 +655,7 @@ function setupSlider() {
     .onChange(function (value) {
       isNight = Boolean(value);
       updateAstronomy(isNight);
+      scene.background = isNight ? nightSkyColor : daySkyColor;
     });
 
   // const slider = document.getElementById("mySlider");
