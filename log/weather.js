@@ -15,6 +15,8 @@ function generateParticles(k = 0.5) {
       Math.random() * 1000 - 100,
       Math.random() * 1000 - 500
     );
+
+    // extra particles to simulate start/end of rain/snow. ignored for now
     // if (numParticles * k % 100 == 0) {
     //   // lower block: first portion of particles falling down
     //   vertices.push(
@@ -36,14 +38,14 @@ function generateParticles(k = 0.5) {
 
 export function generateRain(k) {
   const geometry = generateParticles(k);
-  const material = new THREE.PointsMaterial({ size: 0.2, color: 0x87CEEB, transparent: true, opacity: 0.5 });
+  const material = new THREE.PointsMaterial({ size: 0.2, color: 0x9fd0ff, transparent: true, opacity: 0.8 });
   const rain = new THREE.Points(geometry, material);
   return rain;
 }
 
 export function generateSnow(k) {
   const geometry = generateParticles(k);
-  const material = new THREE.PointsMaterial({ size: 0.3, color: 0xffffff, transparent: true, opacity: 0.8 });
+  const material = new THREE.PointsMaterial({ size: 0.3, color: 0xffffff, transparent: true, opacity: 0.7 });
   const snow = new THREE.Points(geometry, material);
   return snow;
 }
