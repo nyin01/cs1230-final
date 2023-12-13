@@ -29,7 +29,7 @@ export function createDiasGrass() {
   biggrass.receiveShadow = true;
   biggrass.castShadow = true;
   
-  biggrass.position.set(0, -39.9 , 0);
+  biggrass.position.set(0, -39.6 , 0);
 
   return biggrass;
 }
@@ -114,13 +114,14 @@ export function createWaterfallVertical() {
 
   const waterfallVerticalGeometry = new THREE.PlaneGeometry(20, 100);
 
-  const material = shader( new THREE.Color(0xabddbc),  new THREE.Color(0x3a9c88), 20, -84.7, 120.1);
+  const material = shader(new THREE.Color(0xabddbc), new THREE.Color(0x3a9c88), 20, -84.7, 120.1);
+  material.reflectivity = 1;
   
   const waterfallVertical = new THREE.Mesh(waterfallVerticalGeometry, material);
   waterfallVertical.receiveShadow = true;
   waterfallVertical.castShadow = true;
 
-  waterfallVertical.position.set(10, -104.7, 100.1);
+  waterfallVertical.position.set(10, -103, 101);
 
   return waterfallVertical;
 }
@@ -130,11 +131,12 @@ export function createWaterfallHorizontal() {
   // Define a waterfall, assuming it's a thin, vertical box
   const waterfallHorizontalGeometry = new THREE.PlaneGeometry(20, 80);
 
-  const material = shader( new THREE.Color(0xabddbc), new THREE.Color(0x3a9c88), 20, -34.81, 80);
+  const material = shader(new THREE.Color(0xabddbc), new THREE.Color(0x3a9c88), 20, -34.81, 80);
+  // const material = new THREE.MeshPhongMaterial(new THREE.Color(0xabddbc))
 
   const waterfallHortizontal = new THREE.Mesh(waterfallHorizontalGeometry, material);
   waterfallHortizontal.rotateX(-Math.PI * 0.5);
-  waterfallHortizontal.position.set(10, -54.81, 60);
+  waterfallHortizontal.position.set(10, -54.1, 60);
 
   return waterfallHortizontal;
 }
@@ -202,8 +204,8 @@ export const addStone = (x, y, z, radius) => {
   return mesh;
 }
 
-export const addLineHorizontal = (x, y, z1, z2, z3) => {
-  const material = new THREE.LineBasicMaterial({ color: 0xE0FFFF });
+export const addLineHorizontal = (x, y, z1, z2, z3, thickness=20) => {
+  const material = new THREE.LineBasicMaterial({ color: 0xE0FFFF, linewidth: thickness, transparent: true, opacity: 0.9 });
   const points = [];
   points.push(new THREE.Vector3(x, y, z1));
   points.push(new THREE.Vector3(x, y, z2));
@@ -215,8 +217,8 @@ export const addLineHorizontal = (x, y, z1, z2, z3) => {
   return line;
 }
 
-export const addLineHVertical = (x, y1, y2, y3, z) => {
-  const material = new THREE.LineBasicMaterial({ color: 0xE0FFFF });
+export const addLineHVertical = (x, y1, y2, y3, z, thickness=20) => {
+  const material = new THREE.LineBasicMaterial({ color: 0xE0FFFF, linewidth: thickness , transparent: true, opacity: 0.7 });
   const points = [];
   points.push(new THREE.Vector3(x, y1, z));
   points.push(new THREE.Vector3(x, y2, z));

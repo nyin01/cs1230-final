@@ -51,22 +51,50 @@ let sun;
 let moon;
 let stars;
 
+const initCameraX = 250;
+const initCameraY = 300;
+const initCameraZ = 400;
+const initCameraPos = new THREE.Vector3(initCameraX, initCameraY, initCameraZ);
+const cameraMinDistance = 200;
+const cameraMaxDistance = 800;
+
+const daySkyColor = new THREE.Color(0x191970);
+const nightSkyColor = new THREE.Color("black");
+
+const daySkyboxMaterials = [
+  new THREE.MeshBasicMaterial({ color: daySkyColor, side: THREE.BackSide }), // Left side
+  new THREE.MeshBasicMaterial({ color: daySkyColor, side: THREE.BackSide }), // Right side
+  new THREE.MeshBasicMaterial({ color: daySkyColor, side: THREE.BackSide }), // Top side
+  new THREE.MeshBasicMaterial({ color: daySkyColor, side: THREE.BackSide }), // Bottom side
+  new THREE.MeshBasicMaterial({ color: daySkyColor, side: THREE.BackSide }), // Front side
+  new THREE.MeshBasicMaterial({ color: daySkyColor, side: THREE.BackSide }), // Back side
+];
+
+const nightSkyboxMaterials = [
+  new THREE.MeshBasicMaterial({ color: nightSkyColor, side: THREE.BackSide }), // Left side
+  new THREE.MeshBasicMaterial({ color: nightSkyColor, side: THREE.BackSide }), // Right side
+  new THREE.MeshBasicMaterial({ color: nightSkyColor, side: THREE.BackSide }), // Top side
+  new THREE.MeshBasicMaterial({ color: nightSkyColor, side: THREE.BackSide }), // Bottom side
+  new THREE.MeshBasicMaterial({ color: nightSkyColor, side: THREE.BackSide }), // Front side
+  new THREE.MeshBasicMaterial({ color: nightSkyColor, side: THREE.BackSide }), // Back side
+];
+
 // island
 const island = createFloatingIsland(0, -255, 0);
 const islandGrass = createFloatingIslandGrass(0, -54.91, 0);
 const island2 = createFloatingIsland(200, -300, 100);
 const islandGrass2 = createFloatingIslandGrass(200, -99.91, 100);
 const island3 = createFloatingIsland(0, -350, 200);
-const islandGrass3 = createFloatingIslandGrass(0, -149.91, 200);
+const islandGrass3 = createFloatingIslandGrass(0, -148.91, 200);
 const wfH = createWaterfallHorizontal();
 const wfV = createWaterfallVertical();
-const lineH1 = addLineHorizontal(10, -54.5, 60, 50, 70);
-const lineH2 = addLineHorizontal(13, -54.5, 40, 30, 50);
-const lineH3 = addLineHorizontal(15, -54.5, 80, 70, 80);
+const lineH1 = addLineHorizontal(10, -54, 60, 50, 70);
+const lineH2 = addLineHorizontal(13, -54, 40, 30, 50);
+const lineH3 = addLineHorizontal(15, -54, 80, 70, 80);
 
-const lineV1 = addLineHVertical(10, -90, -70, -60, 100.5);
-const lineV2 = addLineHVertical(5, -70, -120, -110, 100.5);
-const lineV3 = addLineHVertical(14, -100, -120, -150, 100.5);
+const lineV1 = addLineHVertical(10, -90, -70, -60, 101.5);
+const lineV2 = addLineHVertical(5, -70, -120, -110, 101.5);
+const lineV3 = addLineHVertical(14, -100, -120, -150, 101.5);
 
 
 const dias = createDias();
@@ -115,7 +143,7 @@ function init() {
   // Scene
   container = document.querySelector("#app");
   scene = new THREE.Scene();
-  scene.background = new THREE.Color("black");
+  scene.background = daySkyColor;  
   scene.fog = new THREE.Fog( 0xffffff, 0.015, 2000 );
 
   // basics
@@ -141,8 +169,11 @@ function setupCamera() {
   const aspect = window.innerWidth / window.innerHeight;
   const width = window.innerWidth;
   const height = window.innerHeight;
-  camera = new THREE.OrthographicCamera(width / - 2, width / 2, height / 2, height / - 2, -1000, 5000);
-  camera.position.set(20, 20, 20);
+  // camera = new THREE.OrthographicCamera(width / - 2, width / 2, height / 2, height / - 2, -1000, 5000);
+  camera = new THREE.PerspectiveCamera(50, aspect, 0.1, 1000);
+
+  // camera.position.set(20, 10, 20);
+  camera.position.set(initCameraPos.x, initCameraPos.y, initCameraPos.z);
   camera.up = new THREE.Vector3(0, 1, 0);
 }
 
@@ -171,8 +202,14 @@ function setupLights() {
 
   const ambientLight = new THREE.AmbientLight(0xffffff, 1);
   ambientLight.position.set(-1, 1, 1);
-  ambientLight.castShadow = true;
+  // ambientLight.castShadow = true;
   scene.add(ambientLight);
+
+  // directional light
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+  directionalLight.position.set(1, 1, 1);
+  directionalLight.castShadow = true;
+  scene.add(directionalLight);
 
   //Set up shadow properties for the light
   pointLight.shadow.mapSize.width = 512; // default
@@ -197,8 +234,8 @@ function setupSkyBox() {
   // ];
 
   // Create the skybox
-  const skyboxGeometry = new THREE.CapsuleGeometry(500, 500, 8, 8);
-  skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterials);
+  const skyboxGeometry = new THREE.CapsuleGeometry(1000, 1000, 8, 8);
+  skybox = new THREE.Mesh(skyboxGeometry, daySkyboxMaterials);
   scene.add(skybox);
 }
 
@@ -208,12 +245,17 @@ function setupControl() {
   controls.enableDamping = true;
   
   controls.dampingFactor = 0.15;
+
+  controls.minDistance = cameraMinDistance;
+  controls.maxDistance = cameraMaxDistance;
+
+  controls.enableRotate = false;
   controls.update();
 }
 
 function buildTree(iteration, growth) {
   // iteration = iteration < 2 ? 2 : iteration;
-  let radius = 3 + (5 * growth) / 1000;
+  let radius = 3 + (20 * growth) / 1000;
   let decay = Math.min(0.95, 1 - 0.05 / (growth / 50));
   let length = (10 * growth) / 100;
   let length_factor = -1 / (growth + 1) + 1;
@@ -229,7 +271,7 @@ function buildTree(iteration, growth) {
   let thin_factor = decay;
   let branch_length = length;
 
-  const angle = Math.PI / 7;
+  const angle = Math.PI / 5;
   const stack = [];
   for (var i = 0; i < l_str.length; i++) {
     var char = l_str[i];
