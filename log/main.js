@@ -41,7 +41,7 @@ function init() {
   // Scene
   container = document.querySelector("#app");
   scene = new THREE.Scene();
-  scene.background = new THREE.Color("lightblue");
+  scene.background = new THREE.Color("black");
 
   // basics
   setupCamera();
@@ -533,6 +533,10 @@ function setWeather() {
   setWind(0);
 }
 
+function isOutOfFrame(yPos) {
+  return yPos < -500;
+}
+
 function animateWeather(k_snow=0, k_rain=0, k_wind=0, snow_drop=0.01, rain_drop=0.5, wind_drift=0.1) {
   // y is vertical direction!
 
@@ -540,11 +544,17 @@ function animateWeather(k_snow=0, k_rain=0, k_wind=0, snow_drop=0.01, rain_drop=
   if (k_snow > 0) {
     snow.position.y -= 0.5 * (k_snow * (2 - k_snow));
     snow.position.x += wind_drift * k_wind;
+    if (isOutOfFrame(snow.position.y)) {
+      setSnow(k_snow);
+    }
   }
 
   if (k_rain > 0) {
     rain.position.y -= 0.75 * (k_rain * (2 - k_rain) + 1); // rain drops faster than snow
     rain.position.x += wind_drift * k_wind * 2;
+    if (isOutOfFrame(rain.position.y)) {
+      setRain(k_rain);
+    }
   }
 
   if (k_wind > 0) {
