@@ -1,12 +1,29 @@
 import "./style.css";
 // import { setupCounter } from './counter.js'
+import "./style.css";
+// import { setupCounter } from './counter.js'
 
+import * as THREE from "three";
 import * as THREE from "three";
 import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { generate } from "./l_util";
+import { generateRain, generateSnow, generateWind } from './weather.js';
+import { createFloatingIsland, 
+        createFloatingIslandGrass,
+        createWaterfallHorizontal,
+        createWaterfallVertical,
+        createDias,
+        createDiasGrass,
+        addCliff,
+        addConeCliff,
+        addStone,
+        addLineHorizontal,
+        addLineHVertical,
+        shader
+      } from './island';
+
 import { GUI } from "three/addons/libs/lil-gui.module.min.js";
-import { generateRain, generateSnow, generateWind } from "./weather.js";
 import { generateSun, generateMoon, generateStars } from "./astronomy.js";
 
 let camera;
@@ -37,11 +54,60 @@ let sun;
 let moon;
 let stars;
 
+// island
+const island = createFloatingIsland();
+const islandGrass = createFloatingIslandGrass();
+const wfH = createWaterfallHorizontal();
+const wfV = createWaterfallVertical();
+const lineH1 = addLineHorizontal(10, -54.5, 60, 50, 70);
+const lineH2 = addLineHorizontal(13, -54.5, 40, 30, 50);
+const lineH3 = addLineHorizontal(15, -54.5, 80, 70, 80);
+
+const lineV1 = addLineHVertical(10, -90, -70, -60, 100.5);
+const lineV2 = addLineHVertical(5, -70, -120, -110, 100.5);
+const lineV3 = addLineHVertical(14, -100, -120, -150, 100.5);
+
+
+const dias = createDias();
+const diasGrass = createDiasGrass();
+const pillar1 = addCliff(20, 40, 20, -35, -35.5, -15, 0xFAEBD7, 0x5e6679);
+const cap1 = addConeCliff(14, 20, -35, -5.5, -15, 0, Math.PI / 2 + 9.99, 0x1E90FF, 0x1E90FF);
+const stone1 = addStone(-50, -55.5, 30, 5);
+const stone2 = addStone(0, -55.5, 50, 7);
+const stone3 = addStone(-60, -55.5, 20, 9);
+const stone4 = addStone(20, -55.5, 70, 5);
+const stone5 = addStone(40, -55.5, 0, 9);
+
+const pillar2 = addCliff(10, 70, 10, -5, -35.5, -70, 0xFAEBD7, 0x5e6679);
+const pillar3 = addCliff(10, 70, 10, 20, -35.5, -70, 0xFAEBD7, 0x5e6679);
+const pillar4 = addCliff(10, 70, 10, 50, -35.5, -70, 0xFAEBD7, 0x5e6679);
+const pillar5 = addCliff(10, 70, 10, 75, -35.5, -70, 0xFAEBD7, 0x5e6679);
+
+
+let rain;
+let snow;
+let wind;
+let iteration = 1;
+let growth = 0;
+
+let k_snow;
+let k_rain;
+let k_wind;
+let snow_drop;
+let rain_drop;
+let wind_drift;
+
+let isNight;
+let sun;
+let moon;
+let stars;
+
 function init() {
   // Scene
   container = document.querySelector("#app");
   scene = new THREE.Scene();
   scene.background = new THREE.Color("black");
+  scene.fog = new THREE.Fog( 0xcccccc, 10, 2000 );
 
   // basics
   setupCamera();
@@ -54,258 +120,62 @@ function init() {
   buildTree(iteration, growth);
   setupSlider();
 
-  // cliff
-  addCliff(2, 1.5, 10, 4, -1.25, 0); // big cliff
-  addCliff(2, 4, 10, 2, -2.5, 0); // big cliff
-  addConeCliff(1.3, 4, 3.7, -4, 3.8, 1); // Triangular cliff
-
   // Create the floating island
-  createFloatingIsland();
+  setUpIsland();
 
+  // weather
   setWeather();
   setAstronomy();
 }
 
 function setupCamera() {
-  /**
-   * PERSPECTIVE CAMERA
-   *
-   *  1) Field of View is the extent of the scene that is seen on the display at any given moment. The value is in degrees.
-   *  2) Aspect Ratio: use the width of the element divided by the height, or you'll get squished image
-   *  3) Near: if objects are closer than 'near', won't be rendered
-   *  4) Far: if objects are farther than 'far', won't be rendered
-   */
-  camera = new THREE.PerspectiveCamera(
-    75,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000
-  );
-  camera.position.set(0, 20, 250);
+  const aspect = window.innerWidth / window.innerHeight;
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  camera = new THREE.OrthographicCamera(width / - 2, width / 2, height / 2, height / - 2, -1000, 5000);
+  camera.position.set(20, 20, 20);
+  camera.up = new THREE.Vector3(0, 1, 0);
 }
 
 function setupRenderer() {
   // Renderer
-  renderer = new THREE.WebGLRenderer();
+  renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+
+  renderer.setPixelRatio(window.devicePixelRatio);
+
+  renderer.shadowMap.enabled = true;
+
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
   renderer.setSize(window.innerWidth * 0.9, window.innerHeight * 0.9);
+
   document.body.appendChild(renderer.domElement);
 }
 
 function setupLights() {
   // Add lighting
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-  directionalLight.position.set(-5, 5, 5);
+  const pointLight = new THREE.DirectionalLight(0xffffff, 1);
+  pointLight.position.set(-1, 1, 1);
+  pointLight.castShadow = true;
+  scene.add(pointLight);
+
+  const ambientLight = new THREE.AmbientLight(0xffffff, 1);
   ambientLight.position.set(1, 1, 1);
-  scene.add(directionalLight);
+  ambientLight.castShadow = true;
   scene.add(ambientLight);
+
+  //Set up shadow properties for the light
+  pointLight.shadow.mapSize.width = 512; // default
+  pointLight.shadow.mapSize.height = 512; // default
+  pointLight.shadow.camera.near = 0.5; // default
+  pointLight.shadow.camera.far = 500; // default
 }
-
-// function to create dias that will hold the tree
-function createDias() {
-  // const building = createDias(0xfedcc1, 0x5e6679, 2, 3, 2, 0.8);
-
-  var bigCubeGeometry = new THREE.BoxGeometry(50, 15, 50);
-  const bigGrassGeometry = new THREE.PlaneGeometry(50, 50);
-  var smallCubeGeometry = new THREE.BoxGeometry(30, 7, 30);
-  const smallGrassGeometry = new THREE.PlaneGeometry(30, 30);
-
-  // var cubeMaterial = new THREE.MeshPhongMaterial({ color: 0xfedcc1 });
-
-  const material = new THREE.ShaderMaterial({
-    vertexShader: `
-        varying vec3 vNormal;
-        varying vec3 vPosition;
-        void main() {
-            vNormal = normal;
-            vPosition = position;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-    `,
-    fragmentShader: `
-        varying vec3 vNormal;
-        varying vec3 vPosition;
-        uniform vec3 color1;
-        uniform vec3 color2;
-        uniform vec3 lightDirection;
-        void main() {
-          // Calculate lighting
-          float lightIntensity = max(dot(normalize(vNormal), lightDirection), 0.0);
-
-          // Quantize the light intensity for toon effect
-          float quantizedIntensity = floor(lightIntensity * 4.0) / 3.0;
-
-          // Gradient mix
-          float mixRatio = clamp((vPosition.y + 0.5), 0.0, 1.0);
-          vec3 gradient = mix(color2, color1, mixRatio);
-
-          // Apply quantized lighting
-          vec3 toonShadedColor = gradient * quantizedIntensity;
-
-          gl_FragColor = vec4(toonShadedColor, 1.0);
-      }
-    `,
-    uniforms: {
-      color1: { value: new THREE.Color(0xfedcc1) }, //light peach
-      color2: { value: new THREE.Color(0xecbea0) }, // tan
-      lightDirection: { value: new THREE.Vector3(-5, 5, 5).normalize() },
-    },
-  });
-
-  const dias = new THREE.Mesh(bigCubeGeometry, material);
-  dias.position.set(0, -47.5, 0);
-  scene.add(dias);
-
-  const grassMaterial = new THREE.MeshToonMaterial({ color: 0xe6eab5 });
-
-  const biggrass = new THREE.Mesh(bigGrassGeometry, grassMaterial);
-  biggrass.rotateX(-Math.PI * 0.5);
-
-  biggrass.position.set(0, -39.9, 0);
-
-  scene.add(biggrass);
-}
-
-function createWaterfall() {
-  // Define a waterfall, assuming it's a thin, vertical box
-  const waterfallVerticalGeometry = new THREE.PlaneGeometry(20, 100);
-  const waterfallHorizontalGeometry = new THREE.PlaneGeometry(20, 50);
-
-  const waterfallMaterial = new THREE.MeshToonMaterial({
-    color: 0x71cbaa,
-    side: THREE.DoubleSide,
-  });
-
-  const material = new THREE.ShaderMaterial({
-    vertexShader: `
-        varying vec3 vNormal;
-        varying vec3 vPosition;
-        void main() {
-            vNormal = normal;
-            vPosition = position;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-    `,
-    fragmentShader: `
-        varying vec3 vNormal;
-        varying vec3 vPosition;
-        uniform vec3 color1;
-        uniform vec3 color2;
-
-        uniform vec3 lightDirection;
-        void main() {
-          // Calculate lighting
-          float lightIntensity = max(dot(normalize(vNormal), lightDirection), 0.0);
-
-          // Quantize the light intensity for toon effect
-          float quantizedIntensity = floor(lightIntensity * 6.0) / 3.0;
-
-          // Gradient mix
-          float mixRatio = clamp((vPosition.y + 10.0), 0.0, 1.0);
-          vec3 gradient = mix(color2, color1, mixRatio);
-
-          // Apply quantized lighting
-          vec3 toonShadedColor = gradient * quantizedIntensity;
-
-          gl_FragColor = vec4(toonShadedColor, 1.0);
-      }
-    `,
-    uniforms: {
-      color1: { value: new THREE.Color(0x71cbaa) }, //light peach
-      color2: { value: new THREE.Color(0x46a493) }, // tan
-      lightDirection: { value: new THREE.Vector3(-5, 5, 10).normalize() },
-    },
-    side: THREE.DoubleSide, // Render both sides
-  });
-
-  const waterfallVertical = new THREE.Mesh(waterfallVerticalGeometry, material);
-  const waterfallHortizontal = new THREE.Mesh(
-    waterfallHorizontalGeometry,
-    waterfallMaterial
-  );
-  waterfallHortizontal.rotateX(-Math.PI * 0.5);
-
-  waterfallVertical.position.set(10, -104.7, 75.1);
-  waterfallHortizontal.position.set(10, -54.81, 50);
-
-  scene.add(waterfallVertical);
-  scene.add(waterfallHortizontal);
-}
-
-// Function to create a floating island
-function createFloatingIsland() {
-  // Create geometries for the island
-  // Define the main island platform
-  const islandGeometry = new THREE.BoxGeometry(200, 10, 150);
-
-  const grassGeometry = new THREE.PlaneGeometry(200, 150);
-
-  // // Define a tower, assuming it's a cylinder
-  const towerGeometry = new THREE.CylinderGeometry(7.5, 7.5, 50, 32);
-
-  // // For the domed roofs, we could use a half-sphere geometry
-  const domeGeometry = new THREE.SphereGeometry(
-    10,
-    32,
-    32,
-    0,
-    Math.PI * 2,
-    0,
-    Math.PI / 2
-  );
-
-  // Create materials for the island
-  const islandMaterial = new THREE.MeshToonMaterial({ color: 0xecbea0 });
-  const grassMaterial = new THREE.MeshToonMaterial({ color: 0xe6eab5 });
-
-  // tan: 0xfedcc1, blue: 0x5e6679
-  const towerMaterial = new THREE.MeshToonMaterial({ color: 0xfedcc1 });
-  const domeMaterial = new THREE.MeshToonMaterial({ color: 0xe6eab5 });
-
-  // Combine geometries and materials for the island
-  const island = new THREE.Mesh(islandGeometry, islandMaterial);
-
-  const grass = new THREE.Mesh(grassGeometry, grassMaterial);
-  grass.rotateX(-Math.PI * 0.5);
-
-  const tower = new THREE.Mesh(towerGeometry, towerMaterial);
-  const dome = new THREE.Mesh(domeGeometry, domeMaterial);
-
-  island.position.set(0, -60, 0);
-  grass.position.set(0, -54.91, 0);
-
-  tower.position.set(3, 4, 3);
-  dome.position.set(-2, 3, -2);
-
-  // Add objects to the scene
-  scene.add(island);
-  scene.add(grass);
-  createWaterfall();
-  createDias();
-  // scene.add(tower);
-  // scene.add(dome);
-}
-
-const addCliff = (width, height, depth, x, y, z) => {
-  const cliffGeometry = new THREE.BoxGeometry(width, height, depth);
-  const cliffMaterial = new THREE.MeshLambertMaterial({ color: 0xecbea0 });
-  const cliff = new THREE.Mesh(cliffGeometry, cliffMaterial);
-  cliff.position.set(x, y, z);
-  scene.add(cliff);
-};
-
-const addConeCliff = (radius, height, x, y, z, rotate) => {
-  const geometry = new THREE.ConeGeometry(radius, height, 4); // 4-sided cone for a triangular base
-  const material = new THREE.MeshLambertMaterial({ color: 0xecbea0 });
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.position.set(x, y, z);
-  mesh.rotateX(-Math.PI);
-  mesh.rotateY(Math.PI + rotate);
-  scene.add(mesh);
-};
 
 function setupSkyBox() {
   // Create materials for the skybox
+  // const skyColor = new THREE.Color(0x191970);
+  // const skyboxMaterials = new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide });
+
   const skyColor = new THREE.Color("black");
   const skyboxMaterials = [
     new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Left side
@@ -317,7 +187,7 @@ function setupSkyBox() {
   ];
 
   // Create the skybox
-  const skyboxGeometry = new THREE.BoxGeometry(300, 300, 300);
+  const skyboxGeometry = new THREE.CapsuleGeometry(500, 500, 8, 8);
   skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterials);
   scene.add(skybox);
 }
@@ -325,22 +195,11 @@ function setupSkyBox() {
 function setupControl() {
   controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(0, 0, 0); // Set the point at which the camera looks
+  controls.enableDamping = true;
+  
+  controls.dampingFactor = 0.15;
   controls.update();
 }
-
-// function setupGeometry() {
-//   const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
-//   const cubeMaterial = new THREE.MeshBasicMaterial({
-//     color: 0x489e94,
-//   });
-//   cube2 = new THREE.Mesh(cubeGeometry, cubeMaterial);
-//   cube2.position.set(-5, 13, 12);
-//   scene.add(cube2);
-//   // another one, added as separate meshes
-//   cube3 = new THREE.Mesh(cubeGeometry, cubeMaterial);
-//   cube3.position.set(30, 13, 12);
-//   scene.add(cube3);
-// }
 
 function buildTree(iteration, growth) {
   // iteration = iteration < 2 ? 2 : iteration;
@@ -360,39 +219,43 @@ function buildTree(iteration, growth) {
   let thin_factor = decay;
   let branch_length = length;
 
+
   const angle = Math.PI / 7;
   const stack = [];
   for (var i = 0; i < l_str.length; i++) {
     var char = l_str[i];
     if (char == "F") {
       if (branch_length > 0) {
+        if (branch_length > 0) {
         //determine endpoint with quaternion rotation
-        const dir = new THREE.Vector3(0, branch_length, 0);
-        dir.applyQuaternion(quaternion);
-        const end_point = start_point.clone();
-        end_point.add(dir);
+          const dir = new THREE.Vector3(0, branch_length, 0);
+          dir.applyQuaternion(quaternion);
+          const end_point = start_point.clone();
+          end_point.add(dir);
 
-        //determine start radius and end radius of the branch
-        const radius_end = radius_start * thin_factor;
+          //determine start radius and end radius of the branch
+          const radius_end = radius_start * thin_factor;
 
-        //create branch and leaf geometry
-        const curr_branch = makeBranch(
-          start_point.clone(),
-          end_point.clone(),
-          radius_start,
-          radius_end,
-          quaternion.clone(),
-          branch_length
-        );
+          //create branch and leaf geometry
+          const curr_branch = makeBranch(
+            start_point.clone(),
+            end_point.clone(),
+            radius_start,
+            radius_end,
+            quaternion.clone(),
+            branch_length
+          );
 
-        //push to render group
-        trunks.push(curr_branch.clone());
+          //push to render group
+          trunks.push(curr_branch.clone());
 
-        //update variables
-        start_point = end_point;
-        radius_start = radius_end;
+          //update variables
+          start_point = end_point;
+          radius_start = radius_end;
         branch_length = branch_length * length_factor;
+          branch_length = branch_length * length_factor;
         continue;
+      }
       }
     } else if (char == "+") {
       quaternion.multiply(
@@ -424,16 +287,19 @@ function buildTree(iteration, growth) {
       );
       new_obj.radius = radius_start;
       new_obj.l = branch_length;
+      new_obj.l = branch_length;
       stack.push(new_obj);
     } else if (char == "]") {
-      const curr_leaf = makeLeaf(start_point.clone(), leaf_radius);
+      const curr_leaf = makeLeaf(start_point.clone(), leaf_radius, leaf_radius);
       leaves.push(curr_leaf.clone());
+
 
       const tuple = stack.pop();
       if (tuple) {
         quaternion.copy(tuple.qua);
         start_point.copy(tuple.pos);
         radius_start = tuple.radius;
+        branch_length = tuple.l;
         branch_length = tuple.l;
       }
     } else if (char == "<") {
@@ -493,12 +359,46 @@ function makeBranch(start, end, s_radius, e_radius, quaternion, length) {
 
 function makeLeaf(center, radius) {
   const leaf_geo = new THREE.SphereGeometry(radius, 2, 2);
+function makeLeaf(center, radius) {
+  const leaf_geo = new THREE.SphereGeometry(radius, 2, 2);
 
   const pos = new THREE.Vector3(center.x, center.y, center.z);
   leaf_geo.translate(pos);
   return leaf_geo;
 }
 
+// ====== WEATHER ======
+// setters will be called by GUI
+
+function setSnow(k) {
+  if (snow) {
+    // Remove existing snow from the scene if it exists
+    scene.remove(snow);
+  }
+  snow = generateSnow(k);
+  scene.add(snow);
+}
+
+function setRain(k) {
+  if (rain) { // Remove existing rain from the scene if it exists
+    scene.remove(rain);
+  }   
+  rain = generateRain(k);
+  scene.add(rain);
+}
+
+function setWind(k) {
+  if (wind) { // Remove existing wind from the scene if it exists
+    scene.remove(wind);
+  }   
+  wind = generateWind(k);
+  // scene.add(wind); // for now do not visualize wind
+}
+
+function setWeather() {
+  setSnow(0);
+  setRain(0);
+  setWind(0);
 // ====== WEATHER ======
 // setters will be called by GUI
 
@@ -622,9 +522,52 @@ function animateAstronomy() {
   stars.position.set(starsX, starsY, starsZ);
 }
 
+function setUpIsland() {
+  scene.add(island);
+  scene.add(islandGrass);
+  scene.add(wfH);
+  scene.add(wfV);
+  scene.add(dias);
+  scene.add(diasGrass);
+  scene.add(pillar1);
+  scene.add(cap1);
+  scene.add(stone1);
+  scene.add(stone2);
+  scene.add(stone3);
+  scene.add(stone4);
+  scene.add(stone5);
+
+  scene.add(lineH1);
+  scene.add(lineH2);
+  scene.add(lineH3);
+  scene.add(lineV1);
+  scene.add(lineV2);
+  scene.add(lineV3);
+
+  scene.add(pillar2);
+  scene.add(pillar3);
+  scene.add(pillar4);
+  scene.add(pillar5);
+}
+
 // Animation Loop
 function animate() {
   requestAnimationFrame(animate);
+
+  animateWeather(k_snow, k_rain, k_wind, snow_drop, rain_drop, wind_drift);
+  animateAstronomy();
+
+  // animate lines in waterfall
+  lineH1.position.z = Math.sin(Date.now() * 0.002 + 1) * 2;
+  lineH2.position.z = Math.sin(Date.now() * 0.002 + 2) * 2;
+  lineH3.position.z = Math.sin(Date.now() * 0.002 + 3) * 2;
+
+  lineV1.position.y = Math.sin(Date.now() * 0.002 + 1) * 2;
+  lineV2.position.y = Math.sin(Date.now() * 0.002 + 2) * 2;
+  lineV3.position.y = Math.sin(Date.now() * 0.002 + 3) * 2;
+
+
+  controls.update();
   animateWeather(k_snow, k_rain, k_wind, snow_drop, rain_drop, wind_drift);
   animateAstronomy();
   controls.update();
@@ -678,9 +621,38 @@ function setupSlider() {
       //delete existing tree mesh
       var tree_mesh = scene.getObjectByName("tree_mesh");
       scene.remove(tree_mesh);
+function setupSlider() {
+  const gui = new GUI();
+
+  gui
+    .add(params, "growth", 0, 100)
+    .step(1)
+    .name("Growth")
+    .onChange(function (value) {
+      //delete existing tree mesh
+      var tree_mesh = scene.getObjectByName("tree_mesh");
+      scene.remove(tree_mesh);
 
       var leaf_mesh = scene.getObjectByName("leaf_mesh");
       scene.remove(leaf_mesh);
+
+      //configure new tree mesh iteration, radius, and decay factor
+      growth = value;
+
+      buildTree(iteration, growth);
+    });
+
+  gui
+    .add(params, "iter", 1, 5)
+    .step(1)
+    .name("Iteration")
+    .onChange(function (value) {
+      //delete existing tree mesh
+      var tree_mesh = scene.getObjectByName("tree_mesh");
+      scene.remove(tree_mesh);
+
+        var leaf_mesh = scene.getObjectByName("leaf_mesh");
+        scene.remove(leaf_mesh);
 
       //configure new tree mesh iteration, radius, and decay factor
       iteration = value;
@@ -739,9 +711,66 @@ function setupSlider() {
   //   const decay_factor = Math.min(0.95, 1 - 0.05 / (value / 50));
   //   const iter = Math.ceil(value / 20);
   //   const length = (10 * value) / 100;
+      //configure new tree mesh iteration, radius, and decay factor
+      iteration = value;
 
-  //   buildTree(iter, radius, decay_factor, length);
-  // });
+      buildTree(iteration, growth);
+    });
+  
+  gui
+    .add(params, "wind", 0, 1)
+    .step(0.1)
+    .name("Wind")
+    .onChange(function (value) {
+      k_wind = value;
+      setWind(value);
+    });
+  
+  gui
+    .add(params, "rain", 0, 1)
+    .step(0.1)
+    .name("Rain")
+    .onChange(function (value) {
+      k_rain = value;
+      setRain(value);
+    });
+  
+  gui
+    .add(params, "snow", 0, 1)
+    .step(0.1)
+    .name("Snow")
+    .onChange(function (value) {
+      k_snow = value;
+      setSnow(value);
+    });
+  
+  gui
+    .add(params, "night", 0, 1)
+    .step(1)
+    .name("Night")
+    .onChange(function (value) {
+      isNight = Boolean(value);
+      updateAstronomy(isNight);
+    });
+
+  // const slider = document.getElementById("mySlider");
+  // slider.addEventListener("input", () => {
+  //   //delete existing tree mesh
+  //   var tree_mesh = scene.getObjectByName("tree_mesh");
+  //   scene.remove(tree_mesh);
+
+  //   var leaf_mesh = scene.getObjectByName("leaf_mesh");
+  //   scene.remove(leaf_mesh);
+
+  //   //configure new tree mesh iteration, radius, and decay factor
+  //   const value = slider.value;
+  //   const radius = 3 + (5 * value) / 100;
+  //   const decay_factor = Math.min(0.95, 1 - 0.05 / (value / 50));
+  //   const iter = Math.ceil(value / 20);
+  //   const length = (10 * value) / 100;
+
+  // //   buildTree(iter, radius, decay_factor, length);
+  // // });
 }
 
 function onWindowResize() {
@@ -756,4 +785,3 @@ window.addEventListener("resize", onWindowResize);
 
 init();
 animate();
-
