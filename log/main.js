@@ -678,48 +678,6 @@ function setupSlider() {
   //   buildTree(iteration, growth);
   // });
 
-  gui
-    .add(params, "wind", 0, 1)
-    .step(0.1)
-    .name("Wind")
-    .onChange(function (value) {
-      k_wind = value;
-      setWind(value);
-    });
-
-  gui
-    .add(params, "rain", 0, 1)
-    .step(0.1)
-    .name("Rain")
-    .onChange(function (value) {
-      k_rain = value;
-      setRain(value);
-    });
-
-  gui
-    .add(params, "snow", 0, 1)
-    .step(0.1)
-    .name("Snow")
-    .onChange(function (value) {
-      k_snow = value;
-      setSnow(value);
-    });
-
-  gui
-    .add(params, "night", 0, 1)
-    .step(1)
-    .name("Night")
-    .onChange(function (value) {
-      isNight = Boolean(value);
-      updateAstronomy(isNight);
-      if (isNight) {
-        skybox.material = nightSkyboxMaterials;
-        scene.background = nightSkyColor;
-      } else {
-        skybox.material = daySkyboxMaterials;
-        scene.background = daySkyColor;
-      }
-    });
 
   // const slider = document.getElementById("mySlider");
   // slider.addEventListener("input", () => {
