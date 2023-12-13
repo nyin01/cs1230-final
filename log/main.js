@@ -56,7 +56,7 @@ const initCameraY = 300;
 const initCameraZ = 400;
 const initCameraPos = new THREE.Vector3(initCameraX, initCameraY, initCameraZ);
 const cameraMinDistance = 200;
-const cameraMaxDistance = 800;
+const cameraMaxDistance = 850;
 
 const daySkyColor = new THREE.Color(0x191970);
 const nightSkyColor = new THREE.Color("black");
@@ -83,7 +83,7 @@ const nightSkyboxMaterials = [
 const island = createFloatingIsland(0, -255, 0);
 const islandGrass = createFloatingIslandGrass(0, -54.91, 0);
 const island2 = createFloatingIsland(200, -300, 100);
-const islandGrass2 = createFloatingIslandGrass(200, -99.91, 100);
+const islandGrass2 = createFloatingIslandGrass(200, -98.91, 100);
 const island3 = createFloatingIsland(0, -350, 200);
 const islandGrass3 = createFloatingIslandGrass(0, -148.91, 200);
 const wfH = createWaterfallHorizontal();
