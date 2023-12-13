@@ -55,7 +55,7 @@ const initCameraY = 300;
 const initCameraZ = 400;
 const initCameraPos = new THREE.Vector3(initCameraX, initCameraY, initCameraZ);
 const cameraMinDistance = 200;
-const cameraMaxDistance = 800;
+const cameraMaxDistance = 850;
 
 const daySkyColor = new THREE.Color(0x90b1ef);
 const nightSkyColor = new THREE.Color(0x0e2b62);
