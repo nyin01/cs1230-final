@@ -9,12 +9,8 @@ let rules = [];
 //   b: "F+[[X]-X]-F[-FX]+X",
 // };
 rules[0] = {
-  a: "X",
-  b: "F+<[[X]->X]->F[-<FX]+X",
-};
-rules[1] = {
-  a: "F",
-  b: "FF",
+  a: "A",
+  b: "F[++A][--A][>>A][<<A]",
 };
 
 // rules[0] = {
