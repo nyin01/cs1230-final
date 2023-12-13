@@ -51,6 +51,12 @@ let sun;
 let moon;
 let stars;
 
+let listener;
+let sound;
+let audioLoader;
+
+let funny;
+
 const initCameraX = 250;
 const initCameraY = 300;
 const initCameraZ = 400;
@@ -143,21 +149,77 @@ function init() {
   setAstronomy();
 
   // music
-  setUpMusic();
+  document.addEventListener("click", onMouseClickMusic, false);
+}
 
+
+var raycaster = new THREE.Raycaster();
+var mouse = new THREE.Vector2();
+
+function onMouseClickMusic(event) {
+  // Calculate mouse position in normalized device coordinates
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    // Update the raycaster's position
+  raycaster.setFromCamera(mouse, camera);
+  
+  // console.log("click ");
+
+    // Check for intersections with the cube
+  var intersects = raycaster.intersectObjects(scene.children, true);
+  
+  console.log("intersects: ", intersects);
+
+    if (intersects.length > 0) {
+        // The first object in the array is the one that was clicked
+        var clickedObject = intersects[0].object;
+        console.log("Mouse click on the cube detected!");
+        
+      // Your logic for handling the click event related to music
+      if (!audioLoader) {
+        console.log("audioLoader not set up yet");
+        setUpMusic();
+      }
+    }
+
+  
 }
 
 function setUpMusic() {
-  const listener = new THREE.AudioListener();
-  camera.add(listener);
-  const sound = new THREE.Audio(listener);
-  const audioLoader = new THREE.AudioLoader();
-  audioLoader.load("sounds/RavelPrelude.mp3", function (buffer) {
-    sound.setBuffer(buffer);
-    sound.setLoop(true);
-    sound.setVolume(0.5);
-    sound.play();
-  });
+  if (!listener) {
+    listener = new THREE.AudioListener();
+    camera.add(listener);
+    sound = new THREE.Audio(listener);
+    audioLoader = new THREE.AudioLoader();
+    audioLoader.load("sounds/RavelPrelude.mp3", function (buffer) {
+      sound.setBuffer(buffer);
+      sound.setLoop(true);
+      sound.setVolume(0.5);
+      sound.play();
+    });
+  }
+}
+
+function updateMusic(funny) {
+  const regular = "sounds/RavelPrelude.mp3";
+  const funnyM = "sounds/treat-me-like-white-tee.mp3";
+  const music = funny ? funnyM : regular;
+
+  // delete the old music
+  if (sound) {
+    console.log("deleting old music");
+    sound.stop();
+    scene.remove(sound);
+  }
+  sound = new THREE.Audio(listener);
+  audioLoader = new THREE.AudioLoader();
+  audioLoader.load(music, function (buffer) {
+      sound.setBuffer(buffer);
+      sound.setLoop(true);
+      sound.setVolume(0.5);
+      sound.play();
+    });
 }
 
 function setupCamera() {
@@ -597,6 +659,7 @@ const params = {
   rain: 0,
   snow: 0,
   night: 0,
+  funny: 0,
 };
 
 function setupSlider() {
@@ -673,48 +736,22 @@ function setupSlider() {
       isNight = Boolean(value);
       updateAstronomy(isNight);
       scene.background = isNight ? nightSkyColor : daySkyColor;
+      skybox.material = isNight ? nightSkyboxMaterials : daySkyboxMaterials;
     });
+  
+  gui
+    .add(params, "funny", 0, 1)
+    .step(1)
+    .name("?")
+    .onChange(function (value) {
+      funny = Boolean(value);
+      if (audioLoader) {
+        updateMusic(funny);
+      }
 
-  // const slider = document.getElementById("mySlider");
-  // slider.addEventListener("input", () => {
-  //   //delete existing tree mesh
-  //   var tree_mesh = scene.getObjectByName("tree_mesh");
-  //   scene.remove(tree_mesh);
-
-  //   var leaf_mesh = scene.getObjectByName("leaf_mesh");
-  //   scene.remove(leaf_mesh);
-
-  //   //configure new tree mesh iteration, radius, and decay factor
-  //   const value = slider.value;
-  //   const radius = 3 + (5 * value) / 100;
-  //   const decay_factor = Math.min(0.95, 1 - 0.05 / (value / 50));
-  //   const iter = Math.ceil(value / 20);
-  //   const length = (10 * value) / 100;
-  //configure new tree mesh iteration, radius, and decay factor
-  //   iteration = value;
-
-  //   buildTree(iteration, growth);
-  // });
+  });
 
 
-  // const slider = document.getElementById("mySlider");
-  // slider.addEventListener("input", () => {
-  //   //delete existing tree mesh
-  //   var tree_mesh = scene.getObjectByName("tree_mesh");
-  //   scene.remove(tree_mesh);
-
-  //   var leaf_mesh = scene.getObjectByName("leaf_mesh");
-  //   scene.remove(leaf_mesh);
-
-  //   //configure new tree mesh iteration, radius, and decay factor
-  //   const value = slider.value;
-  //   const radius = 3 + (5 * value) / 100;
-  //   const decay_factor = Math.min(0.95, 1 - 0.05 / (value / 50));
-  //   const iter = Math.ceil(value / 20);
-  //   const length = (10 * value) / 100;
-
-  // //   buildTree(iter, radius, decay_factor, length);
-  // // });
 }
 
 function onWindowResize() {

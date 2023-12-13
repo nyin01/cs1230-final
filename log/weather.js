@@ -56,3 +56,10 @@ export function generateWind(k) {
   const wind = new THREE.LineSegments(geometry, material);
   return wind;
 }
+
+export function generateCloud(k) {
+  const geometry = generateParticles(k);
+  const material = new THREE.PointsMaterial({ size: 0.5, color: 0xffffff, transparent: true, opacity: 0.5 });
+  const cloud = new THREE.Points(geometry, material);
+  return cloud;
+}
