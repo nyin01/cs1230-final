@@ -590,18 +590,26 @@ function updateAstronomy(isNight) {
 
 // not GUI controlled
 function animateAstronomy() {
-  // make sun and moon orbit around the scene
-  const time = Date.now() * 0.0001;
-  const radius = 100;
-  const sunX = Math.cos(time) * radius;
-  const sunY = Math.sin(time) * radius;
-  const sunZ = Math.sin(time) * radius;
-  const moonX = Math.cos(time + Math.PI) * radius;
-  const moonY = Math.sin(time + Math.PI) * radius;
-  const moonZ = Math.sin(time + Math.PI) * radius;
+  // orbit around the scene
+  const time = Date.now() * 0.001;
+  const sunRadius = 100;
+  const moonRadius = 100;
+  const starsRadius = 100;
+  const sunRate = 0.1;
+  const moonRate = 0.1;
+  const starsRate = 0.01;
+  const sunX = Math.cos(time * sunRate) * sunRadius;
+  const sunY = Math.sin(time * sunRate) * sunRadius;
+  const sunZ = Math.sin(time * sunRate) * sunRadius;
+  const moonX = Math.cos(time * moonRate + Math.PI) * moonRadius;
+  const moonY = Math.sin(time * moonRate + Math.PI) * moonRadius;
+  const moonZ = Math.sin(time * moonRate + Math.PI) * moonRadius;
+  const starsX = Math.cos(time * starsRate) * starsRadius;
+  const starsY = Math.sin(time * starsRate) * starsRadius;
+  const starsZ = Math.sin(time * starsRate) * starsRadius;
   sun.position.set(sunX, sunY, sunZ);
   moon.position.set(moonX, moonY, moonZ);
-  stars.position.set(moonX, moonY, moonZ);
+  stars.position.set(starsX, starsY, starsZ);
 }
 
 // Animation Loop

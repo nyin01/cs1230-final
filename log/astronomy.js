@@ -20,7 +20,8 @@ export function generateMoon() {
 export function generateStars() {
     let geometry = new THREE.BufferGeometry();
     let vertices = [];
-    for (let i = 0; i < 1000; i++) {
+    const numStars = 1000;
+    for (let i = 0; i < numStars; i++) {
         vertices.push(
         Math.random() * 500 - 100,
         Math.random() * 500 - 100,
@@ -28,7 +29,12 @@ export function generateStars() {
         );
     }
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-    const material = new THREE.PointsMaterial({ size: Math.random() * 0.5, color: 0xffffff, transparent: true, opacity: 0.7 });
+    const material = new THREE.PointsMaterial({ size: Math.random(), color: 0xffffff, transparent: true, opacity: 0.7 });
     const stars = new THREE.Points(geometry, material);
+    // for each star, set a random twinkle speed
+    stars.geometry.attributes.position.randomTwinkleSpeed = [];
+    for (let i = 0; i < numStars; i++) {
+        stars.geometry.attributes.position.randomTwinkleSpeed.push(Math.random());
+    }
     return stars;
 }
