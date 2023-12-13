@@ -11,8 +11,9 @@ import { createFloatingIsland,
         createWaterfallHorizontal,
         createWaterfallVertical,
         createDias,
-        createDiasGrass
-      
+        createDiasGrass,
+        addCliff,
+        addConeCliff,
       } from './island';
 
 let camera;
@@ -38,12 +39,16 @@ const wfH = createWaterfallHorizontal();
 const wfV = createWaterfallVertical();
 const dias = createDias();
 const diasGrass = createDiasGrass();
+// const cliff = addCliff(200, 30, 200, 0, -80, 0, 0xecbea0, 0x4c3649);
+const pillar1 = addCliff(20, 40, 20, -35, -35.5, -15, 0xecbea0, 0x5e6679)
+const coneCliff = addConeCliff();
 
 function init() {
   // Scene
   container = document.querySelector("#app");
   scene = new THREE.Scene();
   scene.background = new THREE.Color("lightblue");
+  scene.fog = new THREE.Fog( 0xcccccc, 10, 600 );
 
   // basics
   setupCamera();
@@ -127,9 +132,14 @@ function setupControl() {
   controls.update();
 }
 
-function buildTree(iteration, radius, decay, length) {
+function buildTree(iteration, growth) {
   // iteration = iteration < 2 ? 2 : iteration;
+  let radius = 3 + (5 * growth) / 1000;
+  let decay = Math.min(0.95, 1 - 0.05 / (growth / 50));
+  let length = (10 * growth) / 100;
+  let length_factor = -1 / (growth + 1) + 1;
   let l_str = generate(axiom, iteration, 0);
+  let leaf_radius = Math.max(0, (growth / 100) * 20 - 5);
   total_tree_geo = new THREE.BufferGeometry();
   total_leaf_geo = new THREE.BufferGeometry();
   var quaternion = new THREE.Quaternion();
@@ -139,37 +149,41 @@ function buildTree(iteration, radius, decay, length) {
   let radius_start = radius;
   let thin_factor = decay;
   let branch_length = length;
+
   const angle = Math.PI / 7;
   const stack = [];
   for (var i = 0; i < l_str.length; i++) {
     var char = l_str[i];
     if (char == "F") {
-      //determine endpoint with quaternion rotation
-      const dir = new THREE.Vector3(0, branch_length, 0);
-      dir.applyQuaternion(quaternion);
-      const end_point = start_point.clone();
-      end_point.add(dir);
+      if (branch_length > 0) {
+        //determine endpoint with quaternion rotation
+        const dir = new THREE.Vector3(0, branch_length, 0);
+        dir.applyQuaternion(quaternion);
+        const end_point = start_point.clone();
+        end_point.add(dir);
 
-      //determine start radius and end radius of the branch
-      const radius_end = radius_start * thin_factor;
+        //determine start radius and end radius of the branch
+        const radius_end = radius_start * thin_factor;
 
-      //create branch and leaf geometry
-      const curr_branch = makeBranch(
-        start_point.clone(),
-        end_point.clone(),
-        radius_start,
-        radius_end,
-        quaternion.clone(),
-        branch_length
-      );
+        //create branch and leaf geometry
+        const curr_branch = makeBranch(
+          start_point.clone(),
+          end_point.clone(),
+          radius_start,
+          radius_end,
+          quaternion.clone(),
+          branch_length
+        );
 
-      //push to render group
-      trunks.push(curr_branch.clone());
+        //push to render group
+        trunks.push(curr_branch.clone());
 
-      //update variables
-      start_point = end_point;
-      radius_start = radius_end;
-      continue;
+        //update variables
+        start_point = end_point;
+        radius_start = radius_end;
+        branch_length = branch_length * length_factor;
+        continue;
+      }
     } else if (char == "+") {
       quaternion.multiply(
         new THREE.Quaternion().setFromAxisAngle(
@@ -199,15 +213,18 @@ function buildTree(iteration, radius, decay, length) {
         quaternion.z
       );
       new_obj.radius = radius_start;
+      new_obj.l = branch_length;
       stack.push(new_obj);
     } else if (char == "]") {
-      const curr_leaf = makeLeaf(start_point.clone());
+      const curr_leaf = makeLeaf(start_point.clone(), leaf_radius);
       leaves.push(curr_leaf.clone());
+
       const tuple = stack.pop();
       if (tuple) {
         quaternion.copy(tuple.qua);
         start_point.copy(tuple.pos);
         radius_start = tuple.radius;
+        branch_length = tuple.l;
       }
     } else if (char == "<") {
       quaternion.multiply(
@@ -264,8 +281,8 @@ function makeBranch(start, end, s_radius, e_radius, quaternion, length) {
   return trunk_geo;
 }
 
-function makeLeaf(center) {
-  const leaf_geo = new THREE.SphereGeometry(20, 2, 2);
+function makeLeaf(center, radius) {
+  const leaf_geo = new THREE.SphereGeometry(radius, 2, 2);
 
   const pos = new THREE.Vector3(center.x, center.y, center.z);
   leaf_geo.translate(pos);
@@ -286,6 +303,9 @@ function setUpIsland() {
   scene.add(wfV);
   scene.add(dias);
   scene.add(diasGrass);
+  // scene.add(cliff);
+  scene.add(pillar1);
+
 
 }
 

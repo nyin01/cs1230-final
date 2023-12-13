@@ -134,7 +134,7 @@ export function createWaterfallHorizontal() {
 export function createFloatingIsland() {
   // Create geometries for the island
   // Define the main island platform
-  const islandGeometry = new THREE.BoxGeometry(200, 10, 200);
+  const islandGeometry = new THREE.BoxGeometry(200, 40, 200);
 
   // Create materials for the island
   const islandMaterial = shader(new THREE.Color(0xecbea0), new THREE.Color(0x4c3649), 20, -40, 20);
@@ -144,7 +144,7 @@ export function createFloatingIsland() {
   island.receiveShadow = true;
   island.castShadow = true;
 
-  island.position.set(0, -60, 0);
+  island.position.set(0, -75, 0);
 
   return island;
 }
@@ -166,29 +166,30 @@ export function createFloatingIslandGrass() {
   return grass;
 }
 
+
+export const addCliff = (width, height, depth, x, y, z, color1, color2) => {
+  const cliffGeometry = new THREE.BoxGeometry(width, height, depth);
+  const cliffMaterial = shader(new THREE.Color(color1), new THREE.Color(color2), x, y, z);
+  const cliff = new THREE.Mesh(cliffGeometry, cliffMaterial);
+  cliff.position.set(x, y, z);
+  return cliff;
+};
+
+export const addConeCliff = (radius, height, x, y, z, rotate) => {
+  const geometry = new THREE.ConeGeometry(radius, height, 4);
+  const material = shader(new THREE.Color(0xecbea0), new THREE.Color(0x4c3649), 20, -40, 20);
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.set(x, y, z);
+  mesh.rotateX(-Math.PI);
+  mesh.rotateY(Math.PI + rotate)
+  return mesh;
+};
+
 export function createBase() {
 
-  const addCliff = (width, height, depth, x, y, z) => {
-    const cliffGeometry = new THREE.BoxGeometry(width, height, depth);
-    const cliffMaterial = new THREE.MeshLambertMaterial({ color: 0xecbea0 });
-    const cliff = new THREE.Mesh(cliffGeometry, cliffMaterial);
-    cliff.position.set(x, y, z);
-    scene.add(cliff);
-  };
+  return[addCliff(2, 1.5, 10, 4, -1.25, 0)];
   
-  const addConeCliff = (radius, height, x, y, z, rotate) => {
-    const geometry = new THREE.ConeGeometry(radius, height, 4); // 4-sided cone for a triangular base
-    const material = new THREE.MeshLambertMaterial({ color: 0xecbea0 });
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(x, y, z);
-    mesh.rotateX(-Math.PI);
-    mesh.rotateY(Math.PI + rotate)
-    scene.add(mesh);
-  };
-
-
-  addCliff(2, 1.5, 10, 4, -1.25, 0); // big cliff
-  addCliff(2, 4, 10, 2, -2.5, 0); // big cliff
+  addCliff(2, 4, 10, 2, -2.5, 0);
   addConeCliff(1.3, 4, 3.7, -4, 3.8, 1);     // Triangular cliff
 }
 
