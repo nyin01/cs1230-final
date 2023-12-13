@@ -14,6 +14,9 @@ import { createFloatingIsland,
         createDiasGrass,
         addCliff,
         addConeCliff,
+        addStone,
+        addLineHorizontal,
+        addLineHVertical
       } from './island';
 
 let camera;
@@ -37,11 +40,31 @@ const island = createFloatingIsland();
 const islandGrass = createFloatingIslandGrass();
 const wfH = createWaterfallHorizontal();
 const wfV = createWaterfallVertical();
+const lineH1 = addLineHorizontal(10, -54.5, 60, 50, 70);
+const lineH2 = addLineHorizontal(13, -54.5, 40, 30, 50);
+const lineH3 = addLineHorizontal(15, -54.5, 80, 70, 80);
+
+const lineV1 = addLineHVertical(10, -90, -70, -60, 100.5);
+const lineV2 = addLineHVertical(5, -70, -120, -110, 100.5);
+const lineV3 = addLineHVertical(14, -100, -120, -150, 100.5);
+
+
 const dias = createDias();
 const diasGrass = createDiasGrass();
-// const cliff = addCliff(200, 30, 200, 0, -80, 0, 0xecbea0, 0x4c3649);
-const pillar1 = addCliff(20, 40, 20, -35, -35.5, -15, 0xecbea0, 0x5e6679)
-const coneCliff = addConeCliff();
+const pillar1 = addCliff(20, 40, 20, -35, -35.5, -15, 0xFAEBD7, 0x5e6679);
+const cap1 = addConeCliff(14, 20, -35, -5.5, -15, 0, Math.PI / 2 + 9.99, 0x1E90FF, 0x1E90FF);
+const stone1 = addStone(-50, -55.5, 30, 5);
+const stone2 = addStone(0, -55.5, 50, 7);
+const stone3 = addStone(-60, -55.5, 20, 9);
+const stone4 = addStone(20, -55.5, 70, 5);
+const stone5 = addStone(40, -55.5, 0, 9);
+
+const pillar2 = addCliff(10, 70, 10, -5, -35.5, -70, 0xFAEBD7, 0x5e6679);
+const pillar3 = addCliff(10, 70, 10, 20, -35.5, -70, 0xFAEBD7, 0x5e6679);
+const pillar4 = addCliff(10, 70, 10, 50, -35.5, -70, 0xFAEBD7, 0x5e6679);
+const pillar5 = addCliff(10, 70, 10, 75, -35.5, -70, 0xFAEBD7, 0x5e6679);
+
+
 
 function init() {
   // Scene
@@ -70,11 +93,11 @@ function init() {
 
 function setupCamera() {
   const aspect = window.innerWidth / window.innerHeight;
-  const width = window.innerWidth
-  const height = window.innerHeight
-  camera = new THREE.OrthographicCamera(width / - 2, width / 2, height / 2, height / - 2, -1000, 5000)  
-  camera.position.set(20, 20, 20)
-  camera.up = new THREE.Vector3(0, 1, 0)
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  camera = new THREE.OrthographicCamera(width / - 2, width / 2, height / 2, height / - 2, -1000, 5000);
+  camera.position.set(20, 20, 20);
+  camera.up = new THREE.Vector3(0, 1, 0);
 }
 
 function setupRenderer() {
@@ -96,7 +119,7 @@ function setupRenderer() {
 function setupLights() {
   // Add lighting
   const pointLight = new THREE.DirectionalLight(0xffffff, 1);
-  pointLight.position.set(10, 10, 10);
+  pointLight.position.set(-1, 1, 1);
   pointLight.castShadow = true;
   scene.add(pointLight);
 
@@ -104,6 +127,12 @@ function setupLights() {
   ambientLight.position.set(1, 1, 1);
   ambientLight.castShadow = true;
   scene.add(ambientLight);
+
+  //Set up shadow properties for the light
+  pointLight.shadow.mapSize.width = 512; // default
+  pointLight.shadow.mapSize.height = 512; // default
+  pointLight.shadow.camera.near = 0.5; // default
+  pointLight.shadow.camera.far = 500; // default
 }
 
 function setupSkyBox() {
@@ -119,7 +148,7 @@ function setupSkyBox() {
   ];
 
   // Create the skybox
-  const skyboxGeometry = new THREE.BoxGeometry(300, 300, 300);
+  const skyboxGeometry = new THREE.BoxGeometry(800, 800, 800);
   skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterials);
   scene.add(skybox);
 }
@@ -303,10 +332,25 @@ function setUpIsland() {
   scene.add(wfV);
   scene.add(dias);
   scene.add(diasGrass);
-  // scene.add(cliff);
   scene.add(pillar1);
+  scene.add(cap1);
+  scene.add(stone1);
+  scene.add(stone2);
+  scene.add(stone3);
+  scene.add(stone4);
+  scene.add(stone5);
 
+  scene.add(lineH1);
+  scene.add(lineH2);
+  scene.add(lineH3);
+  scene.add(lineV1);
+  scene.add(lineV2);
+  scene.add(lineV3);
 
+  scene.add(pillar2);
+  scene.add(pillar3);
+  scene.add(pillar4);
+  scene.add(pillar5);
 }
 
 // Animation Loop
@@ -321,6 +365,16 @@ function animate() {
 
   // animate wind 
   wind.position.x += 2;
+
+  // animate lines in waterfall
+  lineH1.position.z = Math.sin(Date.now() * 0.002 + 1) * 2;
+  lineH2.position.z = Math.sin(Date.now() * 0.002 + 2) * 2;
+  lineH3.position.z = Math.sin(Date.now() * 0.002 + 3) * 2;
+
+  lineV1.position.y = Math.sin(Date.now() * 0.002 + 1) * 2;
+  lineV2.position.y = Math.sin(Date.now() * 0.002 + 2) * 2;
+  lineV3.position.y = Math.sin(Date.now() * 0.002 + 3) * 2;
+
 
   controls.update();
 	renderer.render( scene, camera );

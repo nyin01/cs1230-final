@@ -40,18 +40,22 @@ function shader(lowColor, highColor, x, y, z) {
     _ColorLow: { value: lowColor },
     _ColorHigh: { value: highColor },
     _yPosLow: { value: 0.01 },
-    _yPosHigh: { value: 0.1 },
+    _yPosHigh: { value: 50.0 },
     _GradientStrength: { value: 1.0 },
     _ColorX: { value: new THREE.Color(1, 1, 1) },
     _ColorY: { value: new THREE.Color(1, 1, 1) },
     lightDirection: { value: new THREE.Vector3(10 + x, 10 + y, 10 + z).normalize() },
+    cameraPosition: { value:  new THREE.Vector3(50 + x, y, 50 + z) }, // Camera position for edge detection
+
   };
   
   const vertexShader = `
   varying vec3 vWorldPosition;
+  varying vec3 vNormal;
 
   void main() {
     vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+    vNormal = normalize(normalMatrix * normal);
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
   `;
@@ -66,9 +70,11 @@ function shader(lowColor, highColor, x, y, z) {
   uniform vec3 _ColorX;
   uniform vec3 _ColorY;
   uniform vec3 lightDirection;
-
+  // uniform vec3 cameraPosition;
 
   varying vec3 vWorldPosition;
+  varying vec3 vNormal;
+
 
   void main() {
 
@@ -80,7 +86,10 @@ function shader(lowColor, highColor, x, y, z) {
 
     vec3 litGradient = mix(pastelGradient * 0.8, gradient, lightIntensity);
 
-    vec3 finalColor = litGradient;
+    vec3 viewDirection = normalize(cameraPosition - vWorldPosition);
+    float edgeFactor = pow(1.0 - max(dot(viewDirection, vNormal), 0.0), 5.0); // Change the exponent for more/less sensitivity
+    vec3 finalColor = mix(litGradient, litGradient * 0.8, edgeFactor); // Darken the color at edges
+
 
     // Ensure final color doesn't exceed 1.0
     finalColor = clamp(finalColor, 0.0, 1.0);
@@ -121,7 +130,7 @@ export function createWaterfallHorizontal() {
   // Define a waterfall, assuming it's a thin, vertical box
   const waterfallHorizontalGeometry = new THREE.PlaneGeometry(20, 80);
 
-  const material = shader( new THREE.Color(0xabddbc),  new THREE.Color(0x3a9c88), 20, -34.81, 80);
+  const material = shader( new THREE.Color(0xabddbc), new THREE.Color(0x3a9c88), 20, -34.81, 80);
 
   const waterfallHortizontal = new THREE.Mesh(waterfallHorizontalGeometry, material);
   waterfallHortizontal.rotateX(-Math.PI * 0.5);
@@ -137,7 +146,7 @@ export function createFloatingIsland() {
   const islandGeometry = new THREE.BoxGeometry(200, 40, 200);
 
   // Create materials for the island
-  const islandMaterial = shader(new THREE.Color(0xecbea0), new THREE.Color(0x4c3649), 20, -40, 20);
+  const islandMaterial = shader(new THREE.Color(0xecbea0), new THREE.Color(0xDEB887), 20, -40, 20);
   
   // Combine geometries and materials for the island
   const island = new THREE.Mesh(islandGeometry, islandMaterial);
@@ -175,21 +184,46 @@ export const addCliff = (width, height, depth, x, y, z, color1, color2) => {
   return cliff;
 };
 
-export const addConeCliff = (radius, height, x, y, z, rotate) => {
+export const addConeCliff = (radius, height, x, y, z, rotateX, rotateY, color1, color2) => {
   const geometry = new THREE.ConeGeometry(radius, height, 4);
-  const material = shader(new THREE.Color(0xecbea0), new THREE.Color(0x4c3649), 20, -40, 20);
+  const material = shader(new THREE.Color(color1), new THREE.Color(color2), x, y, z);
   const mesh = new THREE.Mesh(geometry, material);
   mesh.position.set(x, y, z);
-  mesh.rotateX(-Math.PI);
-  mesh.rotateY(Math.PI + rotate)
+  mesh.rotateX(rotateX);
+  mesh.rotateY(rotateY);
   return mesh;
 };
 
-export function createBase() {
-
-  return[addCliff(2, 1.5, 10, 4, -1.25, 0)];
-  
-  addCliff(2, 4, 10, 2, -2.5, 0);
-  addConeCliff(1.3, 4, 3.7, -4, 3.8, 1);     // Triangular cliff
+export const addStone = (x, y, z, radius) => {
+  const geometry = new THREE.SphereGeometry(radius, 6, 5);
+  const material = shader(new THREE.Color(0xecbea0), new THREE.Color(0xDEB887), x, y, z);
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.set(x, y, z);
+  return mesh;
 }
 
+export const addLineHorizontal = (x, y, z1, z2, z3) => {
+  const material = new THREE.LineBasicMaterial({ color: 0xE0FFFF });
+  const points = [];
+  points.push(new THREE.Vector3(x, y, z1));
+  points.push(new THREE.Vector3(x, y, z2));
+  points.push(new THREE.Vector3(x, y, z3));
+
+  const geometry = new THREE.BufferGeometry().setFromPoints(points);
+  const line = new THREE.Line(geometry, material);
+
+  return line;
+}
+
+export const addLineHVertical = (x, y1, y2, y3, z) => {
+  const material = new THREE.LineBasicMaterial({ color: 0xE0FFFF });
+  const points = [];
+  points.push(new THREE.Vector3(x, y1, z));
+  points.push(new THREE.Vector3(x, y2, z));
+  points.push(new THREE.Vector3(x, y3, z));
+
+  const geometry = new THREE.BufferGeometry().setFromPoints(points);
+  const line = new THREE.Line(geometry, material);  
+
+  return line;
+}
