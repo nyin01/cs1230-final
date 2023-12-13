@@ -57,8 +57,8 @@ const initCameraPos = new THREE.Vector3(initCameraX, initCameraY, initCameraZ);
 const cameraMinDistance = 200;
 const cameraMaxDistance = 800;
 
-const daySkyColor = new THREE.Color(0x191970);
-const nightSkyColor = new THREE.Color("black");
+const daySkyColor = new THREE.Color(0x90b1ef);
+const nightSkyColor = new THREE.Color(0x0e2b62);
 
 const daySkyboxMaterials = [
   new THREE.MeshBasicMaterial({ color: daySkyColor, side: THREE.BackSide }), // Left side
