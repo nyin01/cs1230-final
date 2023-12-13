@@ -16,7 +16,8 @@ import { createFloatingIsland,
         addConeCliff,
         addStone,
         addLineHorizontal,
-        addLineHVertical
+        addLineHVertical,
+        shader
       } from './island';
 
 import { GUI } from "three/addons/libs/lil-gui.module.min.js";
@@ -86,7 +87,7 @@ function init() {
   container = document.querySelector("#app");
   scene = new THREE.Scene();
   scene.background = new THREE.Color("black");
-  scene.fog = new THREE.Fog( 0xcccccc, 10, 600 );
+  scene.fog = new THREE.Fog( 0xcccccc, 10, 2000 );
 
   // basics
   setupCamera();
@@ -153,6 +154,9 @@ function setupLights() {
 
 function setupSkyBox() {
   // Create materials for the skybox
+  // const skyColor = new THREE.Color(0x191970);
+  // const skyboxMaterials = new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide });
+
   const skyColor = new THREE.Color("black");
   const skyboxMaterials = [
     new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Left side
@@ -164,7 +168,7 @@ function setupSkyBox() {
   ];
 
   // Create the skybox
-  const skyboxGeometry = new THREE.BoxGeometry(300, 300, 300);
+  const skyboxGeometry = new THREE.CapsuleGeometry(500, 500, 8, 8);
   skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterials);
   scene.add(skybox);
 }
@@ -173,6 +177,7 @@ function setupControl() {
   controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(0, 0, 0); // Set the point at which the camera looks
   controls.enableDamping = true;
+  
   controls.dampingFactor = 0.15;
   controls.update();
 }

@@ -34,7 +34,7 @@ export function createDiasGrass() {
   return biggrass;
 }
 
-function shader(lowColor, highColor, x, y, z) {
+export function shader(lowColor, highColor, x, y, z) {
 
   const uniforms = {
     _ColorLow: { value: lowColor },
