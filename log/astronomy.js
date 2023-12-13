@@ -23,9 +23,9 @@ export function generateStars() {
     const numStars = 1000;
     for (let i = 0; i < numStars; i++) {
         vertices.push(
-        Math.random() * 500 - 100,
-        Math.random() * 500 - 100,
-        Math.random() * 500 - 100
+        Math.random() * 500,
+        Math.random() * 500,
+        Math.random() * 500
         );
     }
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));

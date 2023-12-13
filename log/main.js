@@ -29,7 +29,7 @@ let scene;
 let light;
 let skybox;
 let controls;
-let axiom = "X";
+let axiom = "FFFFFA";
 let total_tree_geo = new THREE.BufferGeometry();
 let total_leaf_geo = new THREE.BufferGeometry();
 let container;
@@ -100,7 +100,7 @@ const lineV3 = addLineHVertical(14, -100, -120, -150, 101.5);
 const dias = createDias();
 const diasGrass = createDiasGrass();
 const pillar1 = addCliff(20, 40, 20, -35, -35.5, -15, 0xFAEBD7, 0x5e6679);
-const cap1 = addConeCliff(14, 20, -35, -5.5, -15, 0, Math.PI / 2 + 9.99, 0x1E90FF, 0x1E90FF);
+const cap1 = addConeCliff(14, 20, -35, -5.5, -15, 0, Math.PI / 4, 0x1E90FF, 0x1E90FF);
 const stone1 = addStone(-50, -55.5, 30, 5);
 const stone2 = addStone(0, -55.5, 50, 7);
 const stone3 = addStone(-60, -55.5, 20, 9);
@@ -249,6 +249,9 @@ function setupControl() {
   controls.minDistance = cameraMinDistance;
   controls.maxDistance = cameraMaxDistance;
 
+  const daySkyColor = new THREE.Color(0x90b1ef);
+  const nightSkyColor = new THREE.Color(0x0e2b62);
+
   controls.enableRotate = false;
   controls.update();
 }
@@ -256,9 +259,9 @@ function setupControl() {
 function buildTree(iteration, growth) {
   // iteration = iteration < 2 ? 2 : iteration;
   let radius = 3 + (20 * growth) / 1000;
-  let decay = Math.min(0.95, 1 - 0.05 / (growth / 50));
-  let length = (10 * growth) / 100;
-  let length_factor = -1 / (growth + 1) + 1;
+  let decay = Math.max(0, Math.min(0.9, 1 - 0.2 / (growth / 50)));
+  let length = (30 * growth) / 100;
+  let length_factor = -1 / (growth + 2) + 1;
   let l_str = generate(axiom, iteration, 0);
   let leaf_radius = Math.max(0, (growth / 100) * 20 - 5);
   total_tree_geo = new THREE.BufferGeometry();
@@ -513,18 +516,18 @@ function updateAstronomy(isNight) {
 function animateAstronomy() {
   // orbit around the scene
   const time = Date.now() * 0.001;
-  const sunRadius = 100;
-  const moonRadius = 100;
-  const starsRadius = 100;
+  const sunRadius = 270;
+  const moonRadius = 250;
+  const starsRadius = 50;
   const sunRate = 0.1;
   const moonRate = 0.1;
   const starsRate = 0.01;
   const sunX = Math.cos(time * sunRate) * sunRadius;
   const sunY = Math.sin(time * sunRate) * sunRadius;
-  const sunZ = Math.sin(time * sunRate) * sunRadius;
+  const sunZ = Math.sin(sunRate) * sunRadius;
   const moonX = Math.cos(time * moonRate + Math.PI) * moonRadius;
   const moonY = Math.sin(time * moonRate + Math.PI) * moonRadius;
-  const moonZ = Math.sin(time * moonRate + Math.PI) * moonRadius;
+  const moonZ = Math.sin(moonRate + Math.PI) * moonRadius;
   const starsX = Math.cos(time * starsRate) * starsRadius;
   const starsY = Math.sin(time * starsRate) * starsRadius;
   const starsZ = Math.sin(time * starsRate) * starsRadius;
@@ -585,6 +588,17 @@ function setUpIsland() {
   scene.add(cliffIsland6);
 }
 
+function animateWater() {
+  // animate lines in waterfall
+  const time = Date.now();
+  lineH2.position.z = Math.sin(time * 0.002 + 2) * 5;
+  lineH3.position.z = Math.sin(time * 0.002 + 3) * 5;
+  lineV1.position.y = Math.sin(time * 0.002 + 1) * 5;
+  lineV2.position.y = Math.sin(time * 0.002 + 2) * 5;
+  lineH1.position.z = Math.sin(time * 0.002 + 1) * 5;
+  lineV3.position.y = Math.sin(time * 0.002 + 3) * 5;
+}
+
 // Animation Loop
 function animate() {
   requestAnimationFrame(animate);
@@ -593,13 +607,7 @@ function animate() {
   animateAstronomy();
 
   // animate lines in waterfall
-  lineH1.position.z = Math.sin(Date.now() * 0.002 + 1) * 2;
-  lineH2.position.z = Math.sin(Date.now() * 0.002 + 2) * 2;
-  lineH3.position.z = Math.sin(Date.now() * 0.002 + 3) * 2;
-
-  lineV1.position.y = Math.sin(Date.now() * 0.002 + 1) * 2;
-  lineV2.position.y = Math.sin(Date.now() * 0.002 + 2) * 2;
-  lineV3.position.y = Math.sin(Date.now() * 0.002 + 3) * 2;
+  animateWater();
 
 
   controls.update();
@@ -697,6 +705,13 @@ function setupSlider() {
     .onChange(function (value) {
       isNight = Boolean(value);
       updateAstronomy(isNight);
+      if (isNight) {
+        skybox.material = nightSkyboxMaterials;
+        scene.background = nightSkyColor;
+      } else {
+        skybox.material = daySkyboxMaterials;
+        scene.background = daySkyColor;
+      }
     });
 
   // const slider = document.getElementById("mySlider");
