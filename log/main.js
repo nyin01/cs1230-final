@@ -19,6 +19,9 @@ import { createFloatingIsland,
         addLineHVertical
       } from './island';
 
+import { GUI } from "three/addons/libs/lil-gui.module.min.js";
+import { generateSun, generateMoon, generateStars } from "./astronomy.js";
+
 let camera;
 let renderer;
 let scene;
@@ -29,11 +32,23 @@ let axiom = "X";
 let total_tree_geo = new THREE.BufferGeometry();
 let total_leaf_geo = new THREE.BufferGeometry();
 let container;
+let rain;
+let snow;
+let wind;
+let iteration = 1;
+let growth = 0;
 
-// weather
-const rain = generateRain();
-const snow = generateSnow();
-const wind = generateWind();
+let k_snow;
+let k_rain;
+let k_wind;
+let snow_drop;
+let rain_drop;
+let wind_drift;
+
+let isNight;
+let sun;
+let moon;
+let stars;
 
 // island
 const island = createFloatingIsland();
@@ -70,7 +85,7 @@ function init() {
   // Scene
   container = document.querySelector("#app");
   scene = new THREE.Scene();
-  scene.background = new THREE.Color("lightblue");
+  scene.background = new THREE.Color("black");
   scene.fog = new THREE.Fog( 0xcccccc, 10, 600 );
 
   // basics
@@ -81,14 +96,15 @@ function init() {
   setupControl();
 
   // tree
-  buildTree(5);
+  buildTree(iteration, growth);
   setupSlider();
 
   // Create the floating island
   setUpIsland();
 
   // weather
-  setUpWeather();
+  setWeather();
+  setAstronomy();
 }
 
 function setupCamera() {
@@ -137,7 +153,7 @@ function setupLights() {
 
 function setupSkyBox() {
   // Create materials for the skybox
-  const skyColor = new THREE.Color("lightblue");
+  const skyColor = new THREE.Color("black");
   const skyboxMaterials = [
     new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Left side
     new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Right side
@@ -148,7 +164,7 @@ function setupSkyBox() {
   ];
 
   // Create the skybox
-  const skyboxGeometry = new THREE.BoxGeometry(800, 800, 800);
+  const skyboxGeometry = new THREE.BoxGeometry(300, 300, 300);
   skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterials);
   scene.add(skybox);
 }
@@ -318,11 +334,127 @@ function makeLeaf(center, radius) {
   return leaf_geo;
 }
 
-function setUpWeather() {
-  // weather
-  scene.add(rain);
+// ====== WEATHER ======
+// setters will be called by GUI
+
+function setSnow(k) {
+  if (snow) {
+    // Remove existing snow from the scene if it exists
+    scene.remove(snow);
+  }
+  snow = generateSnow(k);
   scene.add(snow);
-  scene.add(wind);
+}
+
+function setRain(k) {
+  if (rain) { // Remove existing rain from the scene if it exists
+    scene.remove(rain);
+  }   
+  rain = generateRain(k);
+  scene.add(rain);
+}
+
+function setWind(k) {
+  if (wind) { // Remove existing wind from the scene if it exists
+    scene.remove(wind);
+  }   
+  wind = generateWind(k);
+  // scene.add(wind); // for now do not visualize wind
+}
+
+function setWeather() {
+  setSnow(0);
+  setRain(0);
+  setWind(0);
+}
+
+function isOutOfFrame(yPos) {
+  return yPos < -500;
+}
+
+function animateWeather(k_snow=0, k_rain=0, k_wind=0, snow_drop=0.01, rain_drop=0.5, wind_drift=0.1) {
+  // y is vertical direction!
+
+  // weather
+  if (k_snow > 0) {
+    snow.position.y -= 0.5 * (k_snow * (2 - k_snow));
+    snow.position.x += wind_drift * k_wind;
+    if (isOutOfFrame(snow.position.y)) {
+      setSnow(k_snow);
+    }
+  }
+
+  if (k_rain > 0) {
+    rain.position.y -= 0.75 * (k_rain * (2 - k_rain) + 1); // rain drops faster than snow
+    rain.position.x += wind_drift * k_wind * 2;
+    if (isOutOfFrame(rain.position.y)) {
+      setRain(k_rain);
+    }
+  }
+
+  if (k_wind > 0) {
+    // wind.rotation.x += wind_drift * k_wind * 30;
+  }
+
+}
+
+// ====== ASTRONOMY ======
+// setters will be called by GUI
+
+function setSun() {
+  sun = generateSun();
+  sun.visible = !isNight;
+  scene.add(sun);
+}
+
+function setMoon() {
+  moon = generateMoon();
+  moon.visible = isNight;
+  scene.add(moon);
+}
+
+function setStars() {
+  stars = generateStars();
+  stars.visible = isNight;
+  scene.add(stars);
+}
+
+function setAstronomy() {
+  isNight = false;
+  setSun();
+  setMoon();
+  setStars();
+}
+
+// GUI controlled
+function updateAstronomy(isNight) {
+  sun.visible = !isNight;
+  moon.visible = isNight;
+  stars.visible = isNight;
+}
+
+// not GUI controlled
+function animateAstronomy() {
+  // orbit around the scene
+  const time = Date.now() * 0.001;
+  const sunRadius = 100;
+  const moonRadius = 100;
+  const starsRadius = 100;
+  const sunRate = 0.1;
+  const moonRate = 0.1;
+  const starsRate = 0.01;
+  const sunX = Math.cos(time * sunRate) * sunRadius;
+  const sunY = Math.sin(time * sunRate) * sunRadius;
+  const sunZ = Math.sin(time * sunRate) * sunRadius;
+  const moonX = Math.cos(time * moonRate + Math.PI) * moonRadius;
+  const moonY = Math.sin(time * moonRate + Math.PI) * moonRadius;
+  const moonZ = Math.sin(time * moonRate + Math.PI) * moonRadius;
+  const starsX = Math.cos(time * starsRate) * starsRadius;
+  const starsY = Math.sin(time * starsRate) * starsRadius;
+  const starsZ = Math.sin(time * starsRate) * starsRadius;
+  sun.position.set(sunX, sunY, sunZ);
+  moon.position.set(moonX, moonY, moonZ);
+  stars.position.set(starsX, starsY, starsZ);
 }
 
 function setUpIsland() {
@@ -357,14 +489,8 @@ function setUpIsland() {
 function animate() {
   requestAnimationFrame(animate);
 
-  // animate rain and snow to fall down vertically
-  rain.rotation.y += 0.01;
-  rain.position.y -= 0.1;
-  snow.rotation.y += 0.01;
-  snow.position.y -= 0.1;
-
-  // animate wind 
-  wind.position.x += 2;
+  animateWeather(k_snow, k_rain, k_wind, snow_drop, rain_drop, wind_drift);
+  animateAstronomy();
 
   // animate lines in waterfall
   lineH1.position.z = Math.sin(Date.now() * 0.002 + 1) * 2;
@@ -380,34 +506,117 @@ function animate() {
 	renderer.render( scene, camera );
 }
 
-document.querySelector("#app").innerHTML = `
-  <div>
-    <div class="card">
-      <input type="range" min="0" max="100" value="0" class="slider" id="mySlider">
+// document.querySelector("#app").innerHTML = `
+//   <div>
+//     <div class="card">
+//       <input type="range" min="0" max="100" value="0" class="slider" id="mySlider">
 
-    </div>
-  </div>
-`;
+//     </div>
+//   </div>
+// `;
+
+const params = {
+  growth: 0,
+  iter: 1,
+  wind: 0,
+  rain: 0,
+  snow: 0,
+  night: 0,
+};
 
 function setupSlider() {
-  const slider = document.getElementById("mySlider");
-  slider.addEventListener("input", () => {
-    //delete existing tree mesh
-    var tree_mesh = scene.getObjectByName("tree_mesh");
-    scene.remove(tree_mesh);
+  const gui = new GUI();
 
-    var leaf_mesh = scene.getObjectByName("leaf_mesh");
-    scene.remove(leaf_mesh);
+  gui
+    .add(params, "growth", 0, 100)
+    .step(1)
+    .name("Growth")
+    .onChange(function (value) {
+      //delete existing tree mesh
+      var tree_mesh = scene.getObjectByName("tree_mesh");
+      scene.remove(tree_mesh);
 
-    //configure new tree mesh iteration, radius, and decay factor
-    const value = slider.value;
-    const radius = 3 + (5 * value) / 100;
-    const decay_factor = Math.min(0.95, 1 - 0.05 / (value / 50));
-    const iter = Math.ceil(value / 20);
-    const length = (10 * value) / 100;
+      var leaf_mesh = scene.getObjectByName("leaf_mesh");
+      scene.remove(leaf_mesh);
 
-    buildTree(iter, radius, decay_factor, length);
-  });
+      //configure new tree mesh iteration, radius, and decay factor
+      growth = value;
+
+      buildTree(iteration, growth);
+    });
+
+  gui
+    .add(params, "iter", 1, 5)
+    .step(1)
+    .name("Iteration")
+    .onChange(function (value) {
+      //delete existing tree mesh
+      var tree_mesh = scene.getObjectByName("tree_mesh");
+      scene.remove(tree_mesh);
+
+      var leaf_mesh = scene.getObjectByName("leaf_mesh");
+      scene.remove(leaf_mesh);
+
+      //configure new tree mesh iteration, radius, and decay factor
+      iteration = value;
+
+      buildTree(iteration, growth);
+    });
+  
+  gui
+    .add(params, "wind", 0, 1)
+    .step(0.1)
+    .name("Wind")
+    .onChange(function (value) {
+      k_wind = value;
+      setWind(value);
+    });
+  
+  gui
+    .add(params, "rain", 0, 1)
+    .step(0.1)
+    .name("Rain")
+    .onChange(function (value) {
+      k_rain = value;
+      setRain(value);
+    });
+  
+  gui
+    .add(params, "snow", 0, 1)
+    .step(0.1)
+    .name("Snow")
+    .onChange(function (value) {
+      k_snow = value;
+      setSnow(value);
+    });
+  
+  gui
+    .add(params, "night", 0, 1)
+    .step(1)
+    .name("Night")
+    .onChange(function (value) {
+      isNight = Boolean(value);
+      updateAstronomy(isNight);
+    });
+
+  // const slider = document.getElementById("mySlider");
+  // slider.addEventListener("input", () => {
+  //   //delete existing tree mesh
+  //   var tree_mesh = scene.getObjectByName("tree_mesh");
+  //   scene.remove(tree_mesh);
+
+  //   var leaf_mesh = scene.getObjectByName("leaf_mesh");
+  //   scene.remove(leaf_mesh);
+
+  //   //configure new tree mesh iteration, radius, and decay factor
+  //   const value = slider.value;
+  //   const radius = 3 + (5 * value) / 100;
+  //   const decay_factor = Math.min(0.95, 1 - 0.05 / (value / 50));
+  //   const iter = Math.ceil(value / 20);
+  //   const length = (10 * value) / 100;
+
+  //   buildTree(iter, radius, decay_factor, length);
+  // });
 }
 
 function onWindowResize() {
