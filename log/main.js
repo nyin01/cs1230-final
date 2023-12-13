@@ -1,9 +1,5 @@
 import "./style.css";
 // import { setupCounter } from './counter.js'
-import "./style.css";
-// import { setupCounter } from './counter.js'
-
-import * as THREE from "three";
 import * as THREE from "three";
 import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -54,18 +50,46 @@ let sun;
 let moon;
 let stars;
 
+const initCameraX = 250;
+const initCameraY = 300;
+const initCameraZ = 400;
+const initCameraPos = new THREE.Vector3(initCameraX, initCameraY, initCameraZ);
+const cameraMinDistance = 200;
+const cameraMaxDistance = 800;
+
+const daySkyColor = new THREE.Color(0x191970);
+const nightSkyColor = new THREE.Color("black");
+
+const daySkyboxMaterials = [
+  new THREE.MeshBasicMaterial({ color: daySkyColor, side: THREE.BackSide }), // Left side
+  new THREE.MeshBasicMaterial({ color: daySkyColor, side: THREE.BackSide }), // Right side
+  new THREE.MeshBasicMaterial({ color: daySkyColor, side: THREE.BackSide }), // Top side
+  new THREE.MeshBasicMaterial({ color: daySkyColor, side: THREE.BackSide }), // Bottom side
+  new THREE.MeshBasicMaterial({ color: daySkyColor, side: THREE.BackSide }), // Front side
+  new THREE.MeshBasicMaterial({ color: daySkyColor, side: THREE.BackSide }), // Back side
+];
+
+const nightSkyboxMaterials = [
+  new THREE.MeshBasicMaterial({ color: nightSkyColor, side: THREE.BackSide }), // Left side
+  new THREE.MeshBasicMaterial({ color: nightSkyColor, side: THREE.BackSide }), // Right side
+  new THREE.MeshBasicMaterial({ color: nightSkyColor, side: THREE.BackSide }), // Top side
+  new THREE.MeshBasicMaterial({ color: nightSkyColor, side: THREE.BackSide }), // Bottom side
+  new THREE.MeshBasicMaterial({ color: nightSkyColor, side: THREE.BackSide }), // Front side
+  new THREE.MeshBasicMaterial({ color: nightSkyColor, side: THREE.BackSide }), // Back side
+];
+
 // island
 const island = createFloatingIsland();
 const islandGrass = createFloatingIslandGrass();
 const wfH = createWaterfallHorizontal();
 const wfV = createWaterfallVertical();
-const lineH1 = addLineHorizontal(10, -54.5, 60, 50, 70);
-const lineH2 = addLineHorizontal(13, -54.5, 40, 30, 50);
-const lineH3 = addLineHorizontal(15, -54.5, 80, 70, 80);
+const lineH1 = addLineHorizontal(10, -54, 60, 50, 70);
+const lineH2 = addLineHorizontal(13, -54, 40, 30, 50);
+const lineH3 = addLineHorizontal(15, -54, 80, 70, 80);
 
-const lineV1 = addLineHVertical(10, -90, -70, -60, 100.5);
-const lineV2 = addLineHVertical(5, -70, -120, -110, 100.5);
-const lineV3 = addLineHVertical(14, -100, -120, -150, 100.5);
+const lineV1 = addLineHVertical(10, -90, -70, -60, 101.5);
+const lineV2 = addLineHVertical(5, -70, -120, -110, 101.5);
+const lineV3 = addLineHVertical(14, -100, -120, -150, 101.5);
 
 
 const dias = createDias();
@@ -83,30 +107,11 @@ const pillar3 = addCliff(10, 70, 10, 20, -35.5, -70, 0xFAEBD7, 0x5e6679);
 const pillar4 = addCliff(10, 70, 10, 50, -35.5, -70, 0xFAEBD7, 0x5e6679);
 const pillar5 = addCliff(10, 70, 10, 75, -35.5, -70, 0xFAEBD7, 0x5e6679);
 
-
-let rain;
-let snow;
-let wind;
-let iteration = 1;
-let growth = 0;
-
-let k_snow;
-let k_rain;
-let k_wind;
-let snow_drop;
-let rain_drop;
-let wind_drift;
-
-let isNight;
-let sun;
-let moon;
-let stars;
-
 function init() {
   // Scene
   container = document.querySelector("#app");
   scene = new THREE.Scene();
-  scene.background = new THREE.Color("black");
+  scene.background = daySkyColor;
   scene.fog = new THREE.Fog( 0xcccccc, 10, 2000 );
 
   // basics
@@ -132,8 +137,11 @@ function setupCamera() {
   const aspect = window.innerWidth / window.innerHeight;
   const width = window.innerWidth;
   const height = window.innerHeight;
-  camera = new THREE.OrthographicCamera(width / - 2, width / 2, height / 2, height / - 2, -1000, 5000);
-  camera.position.set(20, 20, 20);
+  // camera = new THREE.OrthographicCamera(width / - 2, width / 2, height / 2, height / - 2, -1000, 5000);
+    camera = new THREE.PerspectiveCamera(50, aspect, 0.1, 1000);
+
+  // camera.position.set(20, 10, 20);
+  camera.position.set(initCameraPos.x, initCameraPos.y, initCameraPos.z);
   camera.up = new THREE.Vector3(0, 1, 0);
 }
 
@@ -161,8 +169,14 @@ function setupLights() {
 
   const ambientLight = new THREE.AmbientLight(0xffffff, 1);
   ambientLight.position.set(1, 1, 1);
-  ambientLight.castShadow = true;
+  // ambientLight.castShadow = true;
   scene.add(ambientLight);
+
+  // directional light
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+  directionalLight.position.set(1, 1, 1);
+  directionalLight.castShadow = true;
+  scene.add(directionalLight);
 
   //Set up shadow properties for the light
   pointLight.shadow.mapSize.width = 512; // default
@@ -173,22 +187,13 @@ function setupLights() {
 
 function setupSkyBox() {
   // Create materials for the skybox
-  // const skyColor = new THREE.Color(0x191970);
+
   // const skyboxMaterials = new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide });
 
-  const skyColor = new THREE.Color("black");
-  const skyboxMaterials = [
-    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Left side
-    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Right side
-    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Top side
-    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Bottom side
-    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Front side
-    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Back side
-  ];
 
   // Create the skybox
-  const skyboxGeometry = new THREE.CapsuleGeometry(500, 500, 8, 8);
-  skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterials);
+  const skyboxGeometry = new THREE.CapsuleGeometry(1000, 1000, 8, 8);
+  skybox = new THREE.Mesh(skyboxGeometry, daySkyboxMaterials);
   scene.add(skybox);
 }
 
@@ -198,12 +203,18 @@ function setupControl() {
   controls.enableDamping = true;
   
   controls.dampingFactor = 0.15;
+
+  controls.minDistance = cameraMinDistance;
+  controls.maxDistance = cameraMaxDistance;
+
+  controls.enableRotate = false; 
+
   controls.update();
 }
 
 function buildTree(iteration, growth) {
   // iteration = iteration < 2 ? 2 : iteration;
-  let radius = 3 + (5 * growth) / 1000;
+  let radius = 3 + (20 * growth) / 1000;
   let decay = Math.min(0.95, 1 - 0.05 / (growth / 50));
   let length = (10 * growth) / 100;
   let length_factor = -1 / (growth + 1) + 1;
@@ -220,7 +231,7 @@ function buildTree(iteration, growth) {
   let branch_length = length;
 
 
-  const angle = Math.PI / 7;
+  const angle = Math.PI / 5;
   const stack = [];
   for (var i = 0; i < l_str.length; i++) {
     var char = l_str[i];
@@ -357,8 +368,7 @@ function makeBranch(start, end, s_radius, e_radius, quaternion, length) {
   return trunk_geo;
 }
 
-function makeLeaf(center, radius) {
-  const leaf_geo = new THREE.SphereGeometry(radius, 2, 2);
+
 function makeLeaf(center, radius) {
   const leaf_geo = new THREE.SphereGeometry(radius, 2, 2);
 
@@ -399,39 +409,11 @@ function setWeather() {
   setSnow(0);
   setRain(0);
   setWind(0);
-// ====== WEATHER ======
-// setters will be called by GUI
-
-function setSnow(k) {
-  if (snow) {
-    // Remove existing snow from the scene if it exists
-    scene.remove(snow);
-  }
-  snow = generateSnow(k);
-  scene.add(snow);
 }
+  // ====== WEATHER ======
+  // setters will be called by GUI
 
-function setRain(k) {
-  if (rain) { // Remove existing rain from the scene if it exists
-    scene.remove(rain);
-  }   
-  rain = generateRain(k);
-  scene.add(rain);
-}
 
-function setWind(k) {
-  if (wind) { // Remove existing wind from the scene if it exists
-    scene.remove(wind);
-  }   
-  wind = generateWind(k);
-  // scene.add(wind); // for now do not visualize wind
-}
-
-function setWeather() {
-  setSnow(0);
-  setRain(0);
-  setWind(0);
-}
 
 function isOutOfFrame(yPos) {
   return yPos < -500;
@@ -502,18 +484,18 @@ function updateAstronomy(isNight) {
 function animateAstronomy() {
   // orbit around the scene
   const time = Date.now() * 0.001;
-  const sunRadius = 100;
-  const moonRadius = 100;
-  const starsRadius = 100;
+  const sunRadius = 270;
+  const moonRadius = 250;
+  const starsRadius = 50;
   const sunRate = 0.1;
   const moonRate = 0.1;
   const starsRate = 0.01;
   const sunX = Math.cos(time * sunRate) * sunRadius;
   const sunY = Math.sin(time * sunRate) * sunRadius;
-  const sunZ = Math.sin(time * sunRate) * sunRadius;
+  const sunZ = Math.sin(sunRate) * sunRadius;
   const moonX = Math.cos(time * moonRate + Math.PI) * moonRadius;
   const moonY = Math.sin(time * moonRate + Math.PI) * moonRadius;
-  const moonZ = Math.sin(time * moonRate + Math.PI) * moonRadius;
+  const moonZ = Math.sin(moonRate + Math.PI) * moonRadius;
   const starsX = Math.cos(time * starsRate) * starsRadius;
   const starsY = Math.sin(time * starsRate) * starsRadius;
   const starsZ = Math.sin(time * starsRate) * starsRadius;
@@ -522,7 +504,7 @@ function animateAstronomy() {
   stars.position.set(starsX, starsY, starsZ);
 }
 
-function setUpIsland() {
+function setUpIsland(){
   scene.add(island);
   scene.add(islandGrass);
   scene.add(wfH);
@@ -550,26 +532,25 @@ function setUpIsland() {
   scene.add(pillar5);
 }
 
+function animateWater() {
+  // animate lines in waterfall
+  const time = Date.now();
+  lineH2.position.z = Math.sin(time * 0.002 + 2) * 5;
+  lineH3.position.z = Math.sin(time * 0.002 + 3) * 5;
+  lineV1.position.y = Math.sin(time * 0.002 + 1) * 5;
+  lineV2.position.y = Math.sin(time * 0.002 + 2) * 5;
+  lineH1.position.z = Math.sin(time * 0.002 + 1) * 5;
+  lineV3.position.y = Math.sin(time * 0.002 + 3) * 5;
+}
+
 // Animation Loop
 function animate() {
   requestAnimationFrame(animate);
 
   animateWeather(k_snow, k_rain, k_wind, snow_drop, rain_drop, wind_drift);
   animateAstronomy();
-
-  // animate lines in waterfall
-  lineH1.position.z = Math.sin(Date.now() * 0.002 + 1) * 2;
-  lineH2.position.z = Math.sin(Date.now() * 0.002 + 2) * 2;
-  lineH3.position.z = Math.sin(Date.now() * 0.002 + 3) * 2;
-
-  lineV1.position.y = Math.sin(Date.now() * 0.002 + 1) * 2;
-  lineV2.position.y = Math.sin(Date.now() * 0.002 + 2) * 2;
-  lineV3.position.y = Math.sin(Date.now() * 0.002 + 3) * 2;
-
-
-  controls.update();
-  animateWeather(k_snow, k_rain, k_wind, snow_drop, rain_drop, wind_drift);
-  animateAstronomy();
+  animateWater();
+ 
   controls.update();
   renderer.render(scene, camera);
 }
@@ -592,35 +573,6 @@ const params = {
   night: 0,
 };
 
-function setupSlider() {
-  const gui = new GUI();
-
-  gui
-    .add(params, "growth", 0, 100)
-    .step(1)
-    .name("Growth")
-    .onChange(function (value) {
-      //delete existing tree mesh
-      var tree_mesh = scene.getObjectByName("tree_mesh");
-      scene.remove(tree_mesh);
-
-      var leaf_mesh = scene.getObjectByName("leaf_mesh");
-      scene.remove(leaf_mesh);
-
-      //configure new tree mesh iteration, radius, and decay factor
-      growth = value;
-
-      buildTree(iteration, growth);
-    });
-
-  gui
-    .add(params, "iter", 1, 5)
-    .step(1)
-    .name("Iteration")
-    .onChange(function (value) {
-      //delete existing tree mesh
-      var tree_mesh = scene.getObjectByName("tree_mesh");
-      scene.remove(tree_mesh);
 function setupSlider() {
   const gui = new GUI();
 
@@ -712,10 +664,10 @@ function setupSlider() {
   //   const iter = Math.ceil(value / 20);
   //   const length = (10 * value) / 100;
       //configure new tree mesh iteration, radius, and decay factor
-      iteration = value;
+    //   iteration = value;
 
-      buildTree(iteration, growth);
-    });
+    //   buildTree(iteration, growth);
+    // });
   
   gui
     .add(params, "wind", 0, 1)
@@ -751,6 +703,13 @@ function setupSlider() {
     .onChange(function (value) {
       isNight = Boolean(value);
       updateAstronomy(isNight);
+      if (isNight) {
+        skybox.material = nightSkyboxMaterials;
+        scene.background = nightSkyColor;
+      } else {
+        skybox.material = daySkyboxMaterials;
+        scene.background = daySkyColor;
+      }
     });
 
   // const slider = document.getElementById("mySlider");
@@ -775,8 +734,8 @@ function setupSlider() {
 
 function onWindowResize() {
   camera.aspect = container.clientWidth / container.clientHeight;
-
   camera.updateProjectionMatrix();
+  // setupCamera();
 
   renderer.setSize(container.clientWidth, container.clientHeight);
 }
