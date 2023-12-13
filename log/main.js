@@ -52,8 +52,12 @@ let moon;
 let stars;
 
 // island
-const island = createFloatingIsland();
-const islandGrass = createFloatingIslandGrass();
+const island = createFloatingIsland(0, -255, 0);
+const islandGrass = createFloatingIslandGrass(0, -54.91, 0);
+const island2 = createFloatingIsland(200, -300, 100);
+const islandGrass2 = createFloatingIslandGrass(200, -99.91, 100);
+const island3 = createFloatingIsland(0, -350, 200);
+const islandGrass3 = createFloatingIslandGrass(0, -149.91, 200);
 const wfH = createWaterfallHorizontal();
 const wfV = createWaterfallVertical();
 const lineH1 = addLineHorizontal(10, -54.5, 60, 50, 70);
@@ -80,6 +84,31 @@ const pillar3 = addCliff(10, 70, 10, 20, -35.5, -70, 0xFAEBD7, 0x5e6679);
 const pillar4 = addCliff(10, 70, 10, 50, -35.5, -70, 0xFAEBD7, 0x5e6679);
 const pillar5 = addCliff(10, 70, 10, 75, -35.5, -70, 0xFAEBD7, 0x5e6679);
 
+const cliffIsland2 = addCliff(10, 70, 10, -50, -120, 220, 0xFAEBD7, 0x5e6679); 
+const pillarIsland2 = addCliff(10, 70, 10, -50, -120, 190, 0xFAEBD7, 0x5e6679); 
+
+const cliffIsland3 = addCliff(10, 70, 10, -20, -120, 190, 0xFAEBD7, 0x5e6679); 
+const cliffIsland4 = addCliff(10, 70, 10, -50, -120, 250, 0xFAEBD7, 0x5e6679); 
+const cliffIsland5 = addCliff(70, 10, 10, 5, -145, 235, 0xFAEBD7, 0x5e6679);
+cliffIsland5.rotateY(Math.PI / 2 - 45.0);
+
+const pillarIsland3 = addCliff(20, 40, 20, 170, -100, 100, 0xFAEBD7, 0x5e6679); 
+const pillarIsland4 = addCliff(20, 40, 20, 170, -80, 70, 0xFAEBD7, 0x5e6679); 
+const pillarIsland5 = addCliff(20, 40, 20, 200, -90, 70, 0xFAEBD7, 0x5e6679); 
+const cliffIsland6 = addCliff(20, 40, 20, 230, -100, 70, 0xFAEBD7, 0x5e6679);
+
+const stone6 = addStone(150, -100, 120, 5);
+const stone7 = addStone(200, -100, 160, 7);
+const stone8 = addStone(140, -100, 130, 9);
+const stone9 = addStone(220, -100, 120, 5);
+const stone10 = addStone(240, -100, 110, 9);
+
+const stone11 = addStone(-50, -150, 120, 5);
+const stone12 = addStone(0, -150, 160, 7);
+const stone13 = addStone(-60, -150, 130, 9);
+const stone14 = addStone(20, -150, 120, 5);
+const stone15 = addStone(40, -150, 110, 9);
+
 
 
 function init() {
@@ -87,7 +116,7 @@ function init() {
   container = document.querySelector("#app");
   scene = new THREE.Scene();
   scene.background = new THREE.Color("black");
-  scene.fog = new THREE.Fog( 0xcccccc, 10, 2000 );
+  scene.fog = new THREE.Fog( 0xffffff, 0.015, 2000 );
 
   // basics
   setupCamera();
@@ -125,7 +154,7 @@ function setupRenderer() {
 
   renderer.shadowMap.enabled = true;
 
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  // renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   renderer.setSize(window.innerWidth * 0.9, window.innerHeight * 0.9);
 
@@ -141,7 +170,7 @@ function setupLights() {
   scene.add(pointLight);
 
   const ambientLight = new THREE.AmbientLight(0xffffff, 1);
-  ambientLight.position.set(1, 1, 1);
+  ambientLight.position.set(-1, 1, 1);
   ambientLight.castShadow = true;
   scene.add(ambientLight);
 
@@ -154,18 +183,18 @@ function setupLights() {
 
 function setupSkyBox() {
   // Create materials for the skybox
-  // const skyColor = new THREE.Color(0x191970);
-  // const skyboxMaterials = new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide });
+  const skyColor = new THREE.Color(0x191970);
+  const skyboxMaterials = new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide });
 
-  const skyColor = new THREE.Color("black");
-  const skyboxMaterials = [
-    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Left side
-    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Right side
-    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Top side
-    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Bottom side
-    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Front side
-    new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Back side
-  ];
+  // const skyColor = new THREE.Color("black");
+  // const skyboxMaterials = [
+  //   new THREE.MeshPhongMaterial({ color: skyColor, side: THREE.BackSide }), // Left side
+  //   new THREE.MeshPhongMaterial({ color: skyColor, side: THREE.BackSide }), // Right side
+  //   new THREE.MeshPhongMaterial({ color: skyColor, side: THREE.BackSide }), // Top side
+  //   new THREE.MeshPhongMaterial({ color: skyColor, side: THREE.BackSide }), // Bottom side
+  //   new THREE.MeshPhongMaterial({ color: skyColor, side: THREE.BackSide }), // Front side
+  //   new THREE.MeshPhongMaterial({ color: skyColor, side: THREE.BackSide }), // Back side
+  // ];
 
   // Create the skybox
   const skyboxGeometry = new THREE.CapsuleGeometry(500, 500, 8, 8);
@@ -465,6 +494,10 @@ function animateAstronomy() {
 function setUpIsland() {
   scene.add(island);
   scene.add(islandGrass);
+  scene.add(island2);
+  scene.add(islandGrass2);
+  scene.add(island3);
+  scene.add(islandGrass3);
   scene.add(wfH);
   scene.add(wfV);
   scene.add(dias);
@@ -476,6 +509,16 @@ function setUpIsland() {
   scene.add(stone3);
   scene.add(stone4);
   scene.add(stone5);
+  scene.add(stone6);
+  scene.add(stone7);
+  scene.add(stone8);
+  scene.add(stone9);
+  scene.add(stone10);
+  scene.add(stone11);
+  scene.add(stone12);
+  scene.add(stone13);
+  scene.add(stone14);
+  scene.add(stone15);
 
   scene.add(lineH1);
   scene.add(lineH2);
@@ -488,6 +531,16 @@ function setUpIsland() {
   scene.add(pillar3);
   scene.add(pillar4);
   scene.add(pillar5);
+
+  scene.add(cliffIsland2);
+  scene.add(pillarIsland2);
+  scene.add(cliffIsland3);
+  scene.add(pillarIsland3);
+  scene.add(cliffIsland4);
+  scene.add(pillarIsland4);
+  scene.add(cliffIsland5);
+  scene.add(pillarIsland5);
+  scene.add(cliffIsland6);
 }
 
 // Animation Loop
