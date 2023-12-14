@@ -65,7 +65,8 @@ const cameraMinDistance = 200;
 const cameraMaxDistance = 850;
 
 const daySkyColor = new THREE.Color(0x90b1ef);
-const nightSkyColor = new THREE.Color(0x0e2b62);
+const nightSkyColor = new THREE.Color(0x070653);
+const funnySkyColor = new THREE.Color(0xf30cca);
 
 const daySkyboxMaterials = [
   new THREE.MeshBasicMaterial({ color: daySkyColor, side: THREE.BackSide }), // Left side
@@ -83,6 +84,15 @@ const nightSkyboxMaterials = [
   new THREE.MeshBasicMaterial({ color: nightSkyColor, side: THREE.BackSide }), // Bottom side
   new THREE.MeshBasicMaterial({ color: nightSkyColor, side: THREE.BackSide }), // Front side
   new THREE.MeshBasicMaterial({ color: nightSkyColor, side: THREE.BackSide }), // Back side
+];
+
+const funnySkyboxMaterials = [
+  new THREE.MeshBasicMaterial({ color: funnySkyColor, side: THREE.BackSide }), // Left side
+  new THREE.MeshBasicMaterial({ color: funnySkyColor, side: THREE.BackSide }), // Right side
+  new THREE.MeshBasicMaterial({ color: funnySkyColor, side: THREE.BackSide }), // Top side
+  new THREE.MeshBasicMaterial({ color: funnySkyColor, side: THREE.BackSide }), // Bottom side
+  new THREE.MeshBasicMaterial({ color: funnySkyColor, side: THREE.BackSide }), // Front side
+  new THREE.MeshBasicMaterial({ color: funnySkyColor, side: THREE.BackSide }), // Back side
 ];
 
 // island
@@ -755,6 +765,10 @@ function setupSlider() {
       funny = Boolean(value);
       if (audioLoader) {
         updateMusic(funny);
+        if (funny) {
+          scene.background = funnySkyColor;
+          skybox.material = funnySkyboxMaterials;
+        }
       }
 
   });
