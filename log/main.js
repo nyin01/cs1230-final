@@ -166,19 +166,27 @@ function onMouseClickMusic(event) {
   
   // console.log("click ");
 
-    // Check for intersections with the cube
-  var intersects = raycaster.intersectObjects(scene.children, true);
-  
-  console.log("intersects: ", intersects);
+  // console.log(cap1.uuid)
 
-    if (intersects.length > 0) {
+    // Check for intersections with the cube
+  // var intersects = raycaster.intersectObjects(cap1);
+    // Check for intersections with objects in the scene
+    var intersects = raycaster.intersectObjects(scene.children, true);
+
+//     // Find the object with the specified UUID
+//     var targetObject = intersects.find(object => object.uuid === cap1.uuid
+// );
+  
+  // console.log("intersects: ", intersects);
+
+    if (intersects.length > 1) {
         // The first object in the array is the one that was clicked
         var clickedObject = intersects[0].object;
-        console.log("Mouse click on the cube detected!");
+        // console.log("Mouse click on the cube detected!");
         
       // Your logic for handling the click event related to music
       if (!audioLoader) {
-        console.log("audioLoader not set up yet");
+        console.log("audioLoader initialized");
         setUpMusic();
       }
     }
