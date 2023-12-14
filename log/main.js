@@ -254,7 +254,7 @@ function setupControl() {
   controls.minDistance = cameraMinDistance;
   controls.maxDistance = cameraMaxDistance;
 
-  // controls.enableRotate = false;
+  controls.enableRotate = false;
   controls.update();
 }
 
