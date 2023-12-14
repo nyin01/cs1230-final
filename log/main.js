@@ -768,6 +768,9 @@ function setupSlider() {
         if (funny) {
           scene.background = funnySkyColor;
           skybox.material = funnySkyboxMaterials;
+        } else {
+          scene.background = isNight ? nightSkyColor : daySkyColor;
+          skybox.material = isNight ? nightSkyboxMaterials : daySkyboxMaterials;
         }
       }
 
