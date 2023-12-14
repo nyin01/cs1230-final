@@ -95,9 +95,15 @@ const funnySkyboxMaterials = [
   new THREE.MeshBasicMaterial({ color: funnySkyColor, side: THREE.BackSide }), // Back side
 ];
 
+
+
 // island
-const island = createFloatingIsland();
-const islandGrass = createFloatingIslandGrass();
+const island = createFloatingIsland(0, -255, 0, 0xecbea0);
+const islandGrass = createFloatingIslandGrass(0, -54.91, 0);
+const island2 = createFloatingIsland(200, -300, 100, 0xecbea0);
+const islandGrass2 = createFloatingIslandGrass(200, -98.91, 100);
+const island3 = createFloatingIsland(0, -350, 200, 0xC29179);
+const islandGrass3 = createFloatingIslandGrass(0, -148.91, 200);
 const wfH = createWaterfallHorizontal();
 const wfV = createWaterfallVertical();
 const lineH1 = addLineHorizontal(10, -54, 60, 50, 70);
@@ -107,6 +113,7 @@ const lineH3 = addLineHorizontal(15, -54, 80, 70, 80);
 const lineV1 = addLineHVertical(10, -90, -70, -60, 101.5);
 const lineV2 = addLineHVertical(5, -70, -120, -110, 101.5);
 const lineV3 = addLineHVertical(14, -100, -120, -150, 101.5);
+
 
 const dias = createDias();
 const diasGrass = createDiasGrass();
@@ -128,17 +135,44 @@ const stone3 = addStone(-60, -55.5, 20, 9);
 const stone4 = addStone(20, -55.5, 70, 5);
 const stone5 = addStone(40, -55.5, 0, 9);
 
-const pillar2 = addCliff(10, 70, 10, -5, -35.5, -70, 0xfaebd7, 0x5e6679);
-const pillar3 = addCliff(10, 70, 10, 20, -35.5, -70, 0xfaebd7, 0x5e6679);
-const pillar4 = addCliff(10, 70, 10, 50, -35.5, -70, 0xfaebd7, 0x5e6679);
-const pillar5 = addCliff(10, 70, 10, 75, -35.5, -70, 0xfaebd7, 0x5e6679);
+const pillar2 = addCliff(10, 70, 10, -5, -35.5, -70, 0xFAEBD7, 0x5e6679);
+const pillar3 = addCliff(10, 70, 10, 20, -35.5, -70, 0xFAEBD7, 0x5e6679);
+const pillar4 = addCliff(10, 70, 10, 50, -35.5, -70, 0xFAEBD7, 0x5e6679);
+const pillar5 = addCliff(10, 70, 10, 75, -35.5, -70, 0xFAEBD7, 0x5e6679);
+
+const cliffIsland2 = addCliff(10, 70, 10, -50, -120, 220, 0xFAEBD7, 0x5e6679); 
+const pillarIsland2 = addCliff(10, 70, 10, -50, -120, 190, 0xFAEBD7, 0x5e6679); 
+
+const cliffIsland3 = addCliff(10, 70, 10, -20, -120, 190, 0xFAEBD7, 0x5e6679); 
+const cliffIsland4 = addCliff(10, 70, 10, -50, -120, 250, 0xFAEBD7, 0x5e6679); 
+const cliffIsland5 = addCliff(70, 10, 10, 5, -145, 235, 0xFAEBD7, 0x5e6679);
+cliffIsland5.rotateY(Math.PI / 2 - 45.0);
+
+const pillarIsland3 = addCliff(20, 40, 20, 170, -100, 100, 0xFAEBD7, 0x5e6679); 
+const pillarIsland4 = addCliff(20, 40, 20, 170, -80, 70, 0xFAEBD7, 0x5e6679); 
+const pillarIsland5 = addCliff(20, 40, 20, 200, -90, 70, 0xFAEBD7, 0x5e6679); 
+const cliffIsland6 = addCliff(20, 40, 20, 230, -100, 70, 0xFAEBD7, 0x5e6679);
+
+const stone6 = addStone(150, -100, 120, 5);
+const stone7 = addStone(200, -100, 160, 7);
+const stone8 = addStone(140, -100, 130, 9);
+const stone9 = addStone(220, -100, 120, 5);
+const stone10 = addStone(240, -100, 110, 9);
+
+const stone11 = addStone(-50, -150, 120, 5);
+const stone12 = addStone(0, -150, 160, 7);
+const stone13 = addStone(-60, -150, 130, 9);
+const stone14 = addStone(20, -150, 120, 5);
+const stone15 = addStone(40, -150, 110, 9);
+
+
 
 function init() {
   // Scene
   container = document.querySelector("#app");
   scene = new THREE.Scene();
-  scene.background = daySkyColor;
-  scene.fog = new THREE.Fog(0xcccccc, 10, 2000);
+  scene.background = daySkyColor;  
+  scene.fog = new THREE.Fog( 0xffffff, 0.015, 2000 );
 
   // basics
   setupCamera();
@@ -260,7 +294,7 @@ function setupRenderer() {
 
   renderer.shadowMap.enabled = true;
 
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  // renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   renderer.setSize(window.innerWidth * 0.9, window.innerHeight * 0.9);
 
@@ -276,7 +310,7 @@ function setupLights() {
 
   const ambientLight = new THREE.AmbientLight(0xffffff, 1);
   ambientLight.position.set(1, 1, 1);
-  // ambientLight.castShadow = true;
+  ambientLight.castShadow = true;
   scene.add(ambientLight);
 
   // directional light
@@ -284,6 +318,12 @@ function setupLights() {
   directionalLight.position.set(1, 1, 1);
   directionalLight.castShadow = true;
   scene.add(directionalLight);
+
+
+  const spotlight = new THREE.SpotLight(0xffffff, 1);
+  spotlight.position.set(camera.position.x, camera.position.y, camera.position.z);
+  spotlight.target.position.set(0, 0, 0); // assuming the scene is centered at (0, 0, 0)
+  scene.add(spotlight);
 
   //Set up shadow properties for the light
   pointLight.shadow.mapSize.width = 512; // default
@@ -294,10 +334,22 @@ function setupLights() {
 
 function setupSkyBox() {
   // Create materials for the skybox
-
+  // const skyColor = new THREE.Color(0x191970);
   // const skyboxMaterials = new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide });
 
+  // const skyColor = new THREE.Color("black");
+  // const skyboxMaterials = [
+  //   new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Left side
+  //   new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Right side
+  //   new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Top side
+  //   new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Bottom side
+  //   new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Front side
+  //   new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }), // Back side
+  ];
+
   // Create the skybox
+  const skyboxGeometry = new THREE.CapsuleGeometry(1000, 1000, 8, 8);
+  skybox = new THREE.Mesh(skyboxGeometry, daySkyboxMaterials);
   const skyboxGeometry = new THREE.CapsuleGeometry(1000, 1000, 8, 8);
   skybox = new THREE.Mesh(skyboxGeometry, daySkyboxMaterials);
   scene.add(skybox);
@@ -315,6 +367,11 @@ function setupControl() {
 
   controls.enableRotate = false;
 
+  controls.minDistance = cameraMinDistance;
+  controls.maxDistance = cameraMaxDistance;
+
+  controls.enableRotate = false;
+
   controls.update();
 }
 
@@ -324,6 +381,10 @@ function buildTree(iteration, growth) {
   let decay = Math.max(0, Math.min(0.9, 1 - 0.2 / (growth / 50)));
   let length = (30 * growth) / 100;
   let length_factor = -1 / (growth + 2) + 1;
+  let radius = 3 + (20 * growth) / 1000;
+  let decay = Math.min(0.95, 1 - 0.05 / (growth / 50));
+  let length = (10 * growth) / 100;
+  let length_factor = -1 / (growth + 1) + 1;
   let l_str = generate(axiom, iteration, 0);
   let leaf_radius = Math.max(0, (growth / 100) * 20 - 5);
   total_tree_geo = new THREE.BufferGeometry();
@@ -336,6 +397,7 @@ function buildTree(iteration, growth) {
   let thin_factor = decay;
   let branch_length = length;
 
+  const angle = Math.PI / 5;
   const angle = Math.PI / 5;
   const stack = [];
   for (var i = 0; i < l_str.length; i++) {
@@ -613,6 +675,10 @@ function animateAstronomy() {
 function setUpIsland() {
   scene.add(island);
   scene.add(islandGrass);
+  scene.add(island2);
+  scene.add(islandGrass2);
+  scene.add(island3);
+  scene.add(islandGrass3);
   scene.add(wfH);
   scene.add(wfV);
   scene.add(dias);
@@ -624,6 +690,16 @@ function setUpIsland() {
   scene.add(stone3);
   scene.add(stone4);
   scene.add(stone5);
+  scene.add(stone6);
+  scene.add(stone7);
+  scene.add(stone8);
+  scene.add(stone9);
+  scene.add(stone10);
+  scene.add(stone11);
+  scene.add(stone12);
+  scene.add(stone13);
+  scene.add(stone14);
+  scene.add(stone15);
 
   scene.add(lineH1);
   scene.add(lineH2);
@@ -636,6 +712,27 @@ function setUpIsland() {
   scene.add(pillar3);
   scene.add(pillar4);
   scene.add(pillar5);
+
+  scene.add(cliffIsland2);
+  scene.add(pillarIsland2);
+  scene.add(cliffIsland3);
+  scene.add(pillarIsland3);
+  scene.add(cliffIsland4);
+  scene.add(pillarIsland4);
+  scene.add(cliffIsland5);
+  scene.add(pillarIsland5);
+  scene.add(cliffIsland6);
+}
+
+function animateWater() {
+  // animate lines in waterfall
+  const time = Date.now();
+  lineH2.position.z = Math.sin(time * 0.002 + 2) * 5;
+  lineH3.position.z = Math.sin(time * 0.002 + 3) * 5;
+  lineV1.position.y = Math.sin(time * 0.002 + 1) * 5;
+  lineV2.position.y = Math.sin(time * 0.002 + 2) * 5;
+  lineH1.position.z = Math.sin(time * 0.002 + 1) * 5;
+  lineV3.position.y = Math.sin(time * 0.002 + 3) * 5;
 }
 
 function animateWater() {

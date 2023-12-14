@@ -44,7 +44,7 @@ export function shader(lowColor, highColor, x, y, z) {
     _GradientStrength: { value: 1.0 },
     _ColorX: { value: new THREE.Color(1, 1, 1) },
     _ColorY: { value: new THREE.Color(1, 1, 1) },
-    lightDirection: { value: new THREE.Vector3(10 + x, 10 + y, 10 + z).normalize() },
+    lightDirection: { value: new THREE.Vector3((10 + x), -10 + y, 10 + z).normalize() },
     cameraPosition: { value:  new THREE.Vector3(50 + x, y, 50 + z) }, // Camera position for edge detection
 
   };
@@ -142,25 +142,25 @@ export function createWaterfallHorizontal() {
 }
 
 // Function to create a floating island
-export function createFloatingIsland() {
+export function createFloatingIsland(x, y, z, color) {
   // Create geometries for the island
   // Define the main island platform
-  const islandGeometry = new THREE.BoxGeometry(200, 40, 200);
+  const islandGeometry = new THREE.BoxGeometry(200, 400, 200);
 
   // Create materials for the island
-  const islandMaterial = shader(new THREE.Color(0xecbea0), new THREE.Color(0xDEB887), 20, -40, 20);
+  const islandMaterial = shader(new THREE.Color(color), new THREE.Color(0xDEB887), 20, -40, 20);
   
   // Combine geometries and materials for the island
   const island = new THREE.Mesh(islandGeometry, islandMaterial);
   island.receiveShadow = true;
   island.castShadow = true;
 
-  island.position.set(0, -75, 0);
+  island.position.set(x, y, z);
 
   return island;
 }
 
-export function createFloatingIslandGrass() {
+export function createFloatingIslandGrass(x, y, z) {
 
   const grassGeometry = new THREE.PlaneGeometry(200, 200);
   const grassMaterial = shader(new THREE.Color(0xe6eab5), new THREE.Color(0x8baa92), 20, -30, 20);
@@ -172,7 +172,7 @@ export function createFloatingIslandGrass() {
   grass.receiveShadow = true;
   grass.castShadow = true;
 
-  grass.position.set(0, -54.5 ,0);
+  grass.position.set(x, y , z);
   
   return grass;
 }
