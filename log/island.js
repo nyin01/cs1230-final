@@ -44,7 +44,7 @@ export function shader(lowColor, highColor, x, y, z) {
     _GradientStrength: { value: 1.0 },
     _ColorX: { value: new THREE.Color(1, 1, 1) },
     _ColorY: { value: new THREE.Color(1, 1, 1) },
-    lightDirection: { value: new THREE.Vector3((10 + x), 10 + y, 10 + z).normalize() },
+    lightDirection: { value: new THREE.Vector3((10 + x), -10 + y, 10 + z).normalize() },
     cameraPosition: { value:  new THREE.Vector3(50 + x, y, 50 + z) }, // Camera position for edge detection
 
   };
@@ -142,13 +142,13 @@ export function createWaterfallHorizontal() {
 }
 
 // Function to create a floating island
-export function createFloatingIsland(x, y, z) {
+export function createFloatingIsland(x, y, z, color) {
   // Create geometries for the island
   // Define the main island platform
   const islandGeometry = new THREE.BoxGeometry(200, 400, 200);
 
   // Create materials for the island
-  const islandMaterial = shader(new THREE.Color(0xecbea0), new THREE.Color(0xDEB887), 20, -40, 20);
+  const islandMaterial = shader(new THREE.Color(color), new THREE.Color(0xDEB887), 20, -40, 20);
   
   // Combine geometries and materials for the island
   const island = new THREE.Mesh(islandGeometry, islandMaterial);

@@ -80,11 +80,11 @@ const nightSkyboxMaterials = [
 ];
 
 // island
-const island = createFloatingIsland(0, -255, 0);
+const island = createFloatingIsland(0, -255, 0, 0xecbea0);
 const islandGrass = createFloatingIslandGrass(0, -54.91, 0);
-const island2 = createFloatingIsland(200, -300, 100);
+const island2 = createFloatingIsland(200, -300, 100, 0xecbea0);
 const islandGrass2 = createFloatingIslandGrass(200, -98.91, 100);
-const island3 = createFloatingIsland(0, -350, 200);
+const island3 = createFloatingIsland(0, -350, 200, 0xC29179);
 const islandGrass3 = createFloatingIslandGrass(0, -148.91, 200);
 const wfH = createWaterfallHorizontal();
 const wfV = createWaterfallVertical();
@@ -207,9 +207,14 @@ function setupLights() {
 
   // directional light
   const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-  directionalLight.position.set(1, 1, 1);
+  directionalLight.position.set(1, 1, -1);
   directionalLight.castShadow = true;
   scene.add(directionalLight);
+
+  const spotlight = new THREE.SpotLight(0xffffff, 1);
+  spotlight.position.set(camera.position.x, camera.position.y, camera.position.z);
+  spotlight.target.position.set(0, 0, 0); // assuming the scene is centered at (0, 0, 0)
+  scene.add(spotlight);
 
   //Set up shadow properties for the light
   pointLight.shadow.mapSize.width = 512; // default
@@ -249,7 +254,7 @@ function setupControl() {
   controls.minDistance = cameraMinDistance;
   controls.maxDistance = cameraMaxDistance;
 
-  controls.enableRotate = false;
+  // controls.enableRotate = false;
   controls.update();
 }
 
