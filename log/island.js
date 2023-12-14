@@ -29,7 +29,7 @@ export function createDiasGrass() {
   biggrass.receiveShadow = true;
   biggrass.castShadow = true;
   
-  biggrass.position.set(0, -39.6 , 0);
+  biggrass.position.set(0, -38.6 , 0);
 
   return biggrass;
 }
@@ -121,7 +121,7 @@ export function createWaterfallVertical() {
   waterfallVertical.receiveShadow = true;
   waterfallVertical.castShadow = true;
 
-  waterfallVertical.position.set(10, -103, 101);
+  waterfallVertical.position.set(10, -102, 101);
 
   return waterfallVertical;
 }
@@ -136,7 +136,7 @@ export function createWaterfallHorizontal() {
 
   const waterfallHortizontal = new THREE.Mesh(waterfallHorizontalGeometry, material);
   waterfallHortizontal.rotateX(-Math.PI * 0.5);
-  waterfallHortizontal.position.set(10, -54.1, 60);
+  waterfallHortizontal.position.set(10, -53, 60);
 
   return waterfallHortizontal;
 }
@@ -172,7 +172,7 @@ export function createFloatingIslandGrass(x, y, z) {
   grass.receiveShadow = true;
   grass.castShadow = true;
 
-  grass.position.set(x, y , z);
+  grass.position.set(x, y, z);
   
   return grass;
 }
